@@ -1,9 +1,12 @@
 import SwiftUI
 
 struct HomeView: View {
+    @Environment(SessionFlowViewModel.self) private var flow
     @State private var lightMode = false
 
     var body: some View {
+        @Bindable var flow = flow
+
         NavigationStack {
             ZStack {
                 (lightMode ? Color(hex: "E8E8E8") : Color(hex: "262626"))
@@ -55,7 +58,9 @@ struct HomeView: View {
                     Spacer()
 
                     VStack(spacing: 12) {
-                        NavigationLink(destination: BreathingSessionView()) {
+                        Button {
+                            flow.startCrisisFlow()
+                        } label: {
                             ZStack {
                                 Circle()
                                     .fill(Color(hex: "EAA8EE"))
@@ -77,9 +82,14 @@ struct HomeView: View {
             }
             .navigationBarHidden(true)
         }
+        .fullScreenCover(isPresented: $flow.isCrisisFlowActive) {
+            CrisisFlowView()
+                .environment(flow)
+        }
     }
 }
 
 #Preview {
     HomeView()
+        .environment(SessionFlowViewModel())
 }
