@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Calmly usa la cámara para entender tu entorno y ofrecerte apoyo personalizado.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Calmly escucha el nivel de ruido ambiental para detectar si estás en un entorno intenso.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Calmly puede transcribir tu voz para entender mejor cómo te sientes.</string>
+</dict>
+</plist>
