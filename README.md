@@ -174,10 +174,9 @@ The AI is prompted to:
 
 | Role | Focus |
 |---|---|
-| **P1 — iOS Lead** | Architecture, navigation, AIService, integration |
-| **P2 — UI/Design** | Orb animation, screens, polish, Keynote |
-| **P3 — Sensors** | Camera, audio dB, speech, haptics, TTS |
-| **P4 — AI/Content** | Prompt engineering, fallback scripts, copy, pitch |
+| **P1 - iOS Lead** | Architecture, navigation, AIService, integration |
+| **P2 - UI/Design** | Orb animation, screens, polish, Keynote |
+| **P3 - Sensors & AI** | Camera, audio dB, speech, haptics, TTS, prompt engineering, fallback scripts, copy, pitch |
 
 ---
 
