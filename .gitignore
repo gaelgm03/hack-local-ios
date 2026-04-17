@@ -41,3 +41,4 @@ profile
 .env
 *.env
 Secrets.swift
+**/APIConfig.swift
