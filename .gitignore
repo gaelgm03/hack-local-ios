@@ -26,7 +26,6 @@ DerivedData/
 Packages/
 Package.pins
 Package.resolved
-*.xcodeproj
 
 # CocoaPods (not used but safe)
 Pods/
