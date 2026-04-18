@@ -146,7 +146,7 @@ final class SpeechService {
     }
 
     private var microphonePermission: MicrophonePermission {
-        switch AVAudioApplication.recordPermission {
+        switch AVAudioApplication.shared.recordPermission {
         case .granted:
             return .granted
         case .undetermined:
