@@ -9,4 +9,6 @@ enum AppRoute: Hashable {
     case grounding
     case reframe
     case checkIn
+    case specialists
+    case bookingConfirmation
 }

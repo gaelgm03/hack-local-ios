@@ -34,7 +34,7 @@ struct CrisisCaptureView: View {
 
                     Spacer()
 
-                    Button("Saltar") {
+                    Button("Omitir") {
                         flow.skipCapture()
                     }
                     .font(CalmlyTypography.body)
@@ -46,12 +46,12 @@ struct CrisisCaptureView: View {
                 Spacer()
 
                 VStack(spacing: 24) {
-                    Text("¿Quieres contarme algo?")
+                    Text("Agregar contexto opcional")
                         .font(CalmlyTypography.largeTitle)
                         .foregroundStyle(CalmlyColors.textPrimary)
                         .multilineTextAlignment(.center)
 
-                    Text("Puedes escribir, grabar 5 segundos o tomar una foto del entorno.")
+                    Text("Si te ayuda, puedes escribir, grabar 5 segundos o tomar una foto del entorno. Si no, seguimos sin esto.")
                         .font(CalmlyTypography.body)
                         .foregroundStyle(CalmlyColors.textSecondary)
                         .multilineTextAlignment(.center)
@@ -162,7 +162,7 @@ struct CrisisCaptureView: View {
                             .disabled(isRecordingVoice)
                     }
 
-                    CalmlyPrimaryButton(title: "Siguiente") {
+                    CalmlyPrimaryButton(title: "Continuar con guía") {
                         submitCapture()
                     }
                     .opacity(isSubmitting ? 0.7 : 1.0)

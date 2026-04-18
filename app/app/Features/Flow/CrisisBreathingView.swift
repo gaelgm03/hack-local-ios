@@ -127,10 +127,20 @@ struct CrisisBreathingView: View {
                 }
                 .shadow(color: Color(hex: "B8A9E8").opacity(0.3), radius: 40, y: 6)
 
+                if let empathy = flow.latestResponse?.empathy {
+                    Text(empathy)
+                        .font(CalmlyTypography.body)
+                        .foregroundStyle(CalmlyColors.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(4)
+                        .padding(.top, 28)
+                        .padding(.horizontal, 36)
+                }
+
                 Text(phase.rawValue)
                     .font(CalmlyTypography.title)
                     .foregroundStyle(CalmlyColors.textPrimary)
-                    .padding(.top, 32)
+                    .padding(.top, 18)
                     .contentTransition(.opacity)
                     .animation(.easeInOut(duration: 0.4), value: phase)
 

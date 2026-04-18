@@ -75,7 +75,7 @@ struct HomeView: View {
                     VStack(spacing: 16) {
                         Button {
                             homeVM.dismissAmbientBanner()
-                            flow.startCrisisFlow()
+                            flow.startImmediatePauseFlow()
                         } label: {
                             ZStack {
                                 Circle()
@@ -93,6 +93,32 @@ struct HomeView: View {
                             .multilineTextAlignment(.center)
                             .foregroundStyle(Color(hex: "F09AF3"))
                             .padding(.horizontal, 32)
+
+                        Text("Empieza ahora. Si quieres, luego la personalizamos.")
+                            .font(CalmlyTypography.body)
+                            .foregroundStyle((lightMode ? Color(hex: "222222") : .white).opacity(0.68))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 36)
+
+                        Button {
+                            homeVM.dismissAmbientBanner()
+                            flow.startCrisisFlow()
+                        } label: {
+                            Text("Agregar contexto opcional")
+                                .font(CalmlyTypography.body)
+                                .foregroundStyle(lightMode ? Color(hex: "222222") : .white)
+                                .padding(.horizontal, 18)
+                                .padding(.vertical, 12)
+                                .background(
+                                    Capsule(style: .continuous)
+                                        .stroke((lightMode ? Color(hex: "222222") : .white).opacity(0.22), lineWidth: 1)
+                                        .background(
+                                            Capsule(style: .continuous)
+                                                .fill(lightMode ? .white.opacity(0.72) : .white.opacity(0.07))
+                                        )
+                                )
+                        }
+                        .buttonStyle(.plain)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.bottom, 56)

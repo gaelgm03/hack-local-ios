@@ -5,6 +5,7 @@ import Observation
 @Observable
 final class SessionFlowViewModel {
     // MARK: - Navigation
+    var crisisRoot: AppRoute = .capture
     var crisisPath: [AppRoute] = []
     var isCrisisFlowActive = false
 
@@ -14,8 +15,15 @@ final class SessionFlowViewModel {
     var latestResponse: AIResponse?
     var isInterpreting = false
     var lastErrorMessage: String?
+    var pendingBooking: SpecialistBookingSelection?
+    var confirmedBooking: SpecialistBookingSelection?
 
     private let aiService = AIService()
+    private static let immediatePauseResponse = AIResponse(
+        empathy: "Estoy contigo. Vamos a hacer una pausa ahora mismo.",
+        type: .breathing,
+        script: "Inhala 4 segundos, sostén 4 y exhala 6. Repite conmigo."
+    )
 
     // MARK: - Flow control
 
@@ -23,14 +31,23 @@ final class SessionFlowViewModel {
         context = CalmlyContext()
         latestResponse = nil
         lastErrorMessage = nil
+        pendingBooking = nil
+        confirmedBooking = nil
+        crisisRoot = .capture
         crisisPath = []
         isCrisisFlowActive = true
+    }
+
+    func startImmediatePauseFlow() {
+        startCrisisFlow()
+        latestResponse = Self.immediatePauseResponse
+        crisisRoot = .breathing
     }
 
     func startAmbientCrisisFlow(noiseLevel: Double) {
         startCrisisFlow()
         context.ambientNoiseLevel = noiseLevel
-        crisisPath.append(.interpreting)
+        crisisRoot = .interpreting
     }
 
     func submitCapture(text: String?) {
@@ -60,7 +77,7 @@ final class SessionFlowViewModel {
 
         do {
             latestResponse = try await aiService.interpret(context: context, demoMode: demoModeEnabled)
-            crisisPath.append(.response)
+            navigateToIntervention()
         } catch {
             lastErrorMessage = "No pude conectar. Intentemos con algo que siempre funciona."
         }
@@ -69,7 +86,12 @@ final class SessionFlowViewModel {
     }
 
     func startSession() {
+        navigateToIntervention()
+    }
+
+    private func navigateToIntervention() {
         guard let response = latestResponse else { return }
+
         switch response.type {
         case .breathing:
             crisisPath.append(.breathing)
@@ -84,12 +106,36 @@ final class SessionFlowViewModel {
         crisisPath.append(.checkIn)
     }
 
+    func showSpecialistBridge() {
+        pendingBooking = nil
+        confirmedBooking = nil
+        crisisPath.append(.specialists)
+    }
+
+    func selectBooking(_ booking: SpecialistBookingSelection) {
+        pendingBooking = booking
+        confirmedBooking = nil
+    }
+
+    func showBookingConfirmation() {
+        guard pendingBooking != nil else { return }
+        crisisPath.append(.bookingConfirmation)
+    }
+
+    func confirmBooking() {
+        guard let pendingBooking else { return }
+        confirmedBooking = pendingBooking
+    }
+
     func completeFlow() {
         isCrisisFlowActive = false
+        crisisRoot = .capture
         crisisPath = []
         context = CalmlyContext()
         latestResponse = nil
         lastErrorMessage = nil
+        pendingBooking = nil
+        confirmedBooking = nil
     }
 
     // MARK: - Legacy helpers

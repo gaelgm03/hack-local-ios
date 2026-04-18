@@ -1,4 +1,5 @@
 import XCTest
+import UIKit
 @testable import app
 
 @MainActor
@@ -22,14 +23,25 @@ final class SessionFlowViewModelTests: XCTestCase {
         sut.latestResponse = AIResponse(empathy: "test", type: .breathing, script: "test")
         sut.lastErrorMessage = "error"
         sut.crisisPath = [.capture, .interpreting]
+        sut.crisisRoot = .breathing
 
         sut.startCrisisFlow()
 
         XCTAssertTrue(sut.isCrisisFlowActive)
+        XCTAssertEqual(sut.crisisRoot, .capture)
         XCTAssertTrue(sut.crisisPath.isEmpty)
         XCTAssertNil(sut.latestResponse)
         XCTAssertNil(sut.lastErrorMessage)
         XCTAssertNil(sut.context.userText)
+    }
+
+    func test_startImmediatePauseFlow_startsInBreathing() {
+        sut.startImmediatePauseFlow()
+
+        XCTAssertTrue(sut.isCrisisFlowActive)
+        XCTAssertEqual(sut.crisisRoot, .breathing)
+        XCTAssertTrue(sut.crisisPath.isEmpty)
+        XCTAssertEqual(sut.latestResponse?.type, .breathing)
     }
 
     // MARK: - submitCapture
@@ -76,34 +88,34 @@ final class SessionFlowViewModelTests: XCTestCase {
 
     // MARK: - interpretCurrentContext (demo mode)
 
-    func test_interpretCurrentContext_demoMode_setsResponseAndNavigates() async {
+    func test_interpretCurrentContext_demoMode_setsResponseAndNavigatesDirectlyToSession() async {
         sut.demoModeEnabled = true
 
         await sut.interpretCurrentContext()
 
         XCTAssertNotNil(sut.latestResponse)
-        XCTAssertEqual(sut.latestResponse?.type, .breathing)
-        XCTAssertTrue(sut.crisisPath.contains(.response))
+        XCTAssertEqual(sut.latestResponse?.type, .grounding)
+        XCTAssertEqual(sut.crisisPath.last, .grounding)
         XCTAssertFalse(sut.isInterpreting)
         XCTAssertNil(sut.lastErrorMessage)
     }
 
-    func test_interpretCurrentContext_demoMode_withUserText_usesPersonalizedEmpathy() async {
+    func test_interpretCurrentContext_demoMode_withUserText_usesCurrentDemoEmpathy() async {
         sut.demoModeEnabled = true
         sut.context.userText = "Estoy muy estresado"
 
         await sut.interpretCurrentContext()
 
-        XCTAssertEqual(sut.latestResponse?.empathy, "Gracias por contarme esto. Estoy contigo y vamos un paso a la vez.")
+        XCTAssertEqual(sut.latestResponse?.empathy, "Tu entorno se siente cargado. Vamos a volver al presente juntos.")
     }
 
-    func test_interpretCurrentContext_demoMode_withoutUserText_usesGenericEmpathy() async {
+    func test_interpretCurrentContext_demoMode_withoutUserText_usesCurrentDemoEmpathy() async {
         sut.demoModeEnabled = true
         sut.context.userText = nil
 
         await sut.interpretCurrentContext()
 
-        XCTAssertEqual(sut.latestResponse?.empathy, "Parece que este momento se siente intenso. Estoy aquí contigo.")
+        XCTAssertEqual(sut.latestResponse?.empathy, "Tu entorno se siente cargado. Vamos a volver al presente juntos.")
     }
 
     func test_interpretCurrentContext_preventsDoubleCall() async {
@@ -112,21 +124,19 @@ final class SessionFlowViewModelTests: XCTestCase {
 
         await sut.interpretCurrentContext()
 
-        // Should not have navigated because guard blocked it
-        XCTAssertFalse(sut.crisisPath.contains(.response))
+        XCTAssertTrue(sut.crisisPath.isEmpty)
     }
 
     // MARK: - interpretCurrentContext (no API key)
 
     func test_interpretCurrentContext_noAPIKey_returnsFallback() async {
         sut.demoModeEnabled = false
-        // APIConfig.openAIKey is empty by default → hasValidKey == false
 
         await sut.interpretCurrentContext()
 
         XCTAssertNotNil(sut.latestResponse)
-        XCTAssertEqual(sut.latestResponse?.empathy, "Estoy aquí contigo. Vamos a hacer una pausa juntos.")
-        XCTAssertTrue(sut.crisisPath.contains(.response))
+        XCTAssertEqual(sut.latestResponse?.empathy, "Este momento se siente intenso. Vamos a conectar con lo que te rodea.")
+        XCTAssertEqual(sut.crisisPath.last, .grounding)
     }
 
     // MARK: - startSession
@@ -171,77 +181,129 @@ final class SessionFlowViewModelTests: XCTestCase {
         XCTAssertEqual(sut.crisisPath, [.checkIn])
     }
 
+    func test_showSpecialistBridge_navigatesToSpecialists() {
+        sut.showSpecialistBridge()
+
+        XCTAssertEqual(sut.crisisPath, [.specialists])
+    }
+
+    func test_selectBooking_storesPendingBooking() {
+        let booking = SpecialistBookingSelection(
+            specialistName: "Dra. Elena Ruiz",
+            specialty: "Ansiedad y regulacion emocional",
+            modeTitle: "Online",
+            location: "Online en todo Mexico",
+            price: "$650 MXN",
+            slot: "Hoy 6:30 PM"
+        )
+
+        sut.selectBooking(booking)
+
+        XCTAssertEqual(sut.pendingBooking, booking)
+        XCTAssertNil(sut.confirmedBooking)
+    }
+
+    func test_showBookingConfirmation_requiresPendingBooking() {
+        sut.showBookingConfirmation()
+        XCTAssertTrue(sut.crisisPath.isEmpty)
+
+        let booking = SpecialistBookingSelection(
+            specialistName: "Dra. Elena Ruiz",
+            specialty: "Ansiedad y regulacion emocional",
+            modeTitle: "Online",
+            location: "Online en todo Mexico",
+            price: "$650 MXN",
+            slot: "Hoy 6:30 PM"
+        )
+        sut.selectBooking(booking)
+
+        sut.showBookingConfirmation()
+
+        XCTAssertEqual(sut.crisisPath, [.bookingConfirmation])
+    }
+
+    func test_confirmBooking_movesPendingBookingToConfirmed() {
+        let booking = SpecialistBookingSelection(
+            specialistName: "Dra. Elena Ruiz",
+            specialty: "Ansiedad y regulacion emocional",
+            modeTitle: "Online",
+            location: "Online en todo Mexico",
+            price: "$650 MXN",
+            slot: "Hoy 6:30 PM"
+        )
+        sut.selectBooking(booking)
+
+        sut.confirmBooking()
+
+        XCTAssertEqual(sut.confirmedBooking, booking)
+    }
+
     // MARK: - completeFlow
 
     func test_completeFlow_resetsEverything() {
         sut.isCrisisFlowActive = true
+        sut.crisisRoot = .breathing
         sut.crisisPath = [.capture, .interpreting, .response, .breathing, .checkIn]
         sut.latestResponse = AIResponse(empathy: "test", type: .breathing, script: "test")
         sut.lastErrorMessage = "error"
         sut.context.userText = "something"
+        sut.pendingBooking = SpecialistBookingSelection(
+            specialistName: "Dra. Elena Ruiz",
+            specialty: "Ansiedad y regulacion emocional",
+            modeTitle: "Online",
+            location: "Online en todo Mexico",
+            price: "$650 MXN",
+            slot: "Hoy 6:30 PM"
+        )
+        sut.confirmedBooking = sut.pendingBooking
 
         sut.completeFlow()
 
         XCTAssertFalse(sut.isCrisisFlowActive)
+        XCTAssertEqual(sut.crisisRoot, .capture)
         XCTAssertTrue(sut.crisisPath.isEmpty)
         XCTAssertNil(sut.latestResponse)
         XCTAssertNil(sut.lastErrorMessage)
         XCTAssertNil(sut.context.userText)
+        XCTAssertNil(sut.pendingBooking)
+        XCTAssertNil(sut.confirmedBooking)
     }
 
     // MARK: - Full flow integration
 
     func test_fullHappyPath_demoMode() async {
-        // 1. Start flow
         sut.startCrisisFlow()
         XCTAssertTrue(sut.isCrisisFlowActive)
         XCTAssertTrue(sut.crisisPath.isEmpty)
 
-        // 2. Submit capture
         sut.submitCapture(text: "Me siento abrumado")
         XCTAssertEqual(sut.crisisPath, [.interpreting])
 
-        // 3. AI interprets
         await sut.interpretCurrentContext()
-        XCTAssertEqual(sut.crisisPath, [.interpreting, .response])
+        XCTAssertEqual(sut.crisisPath, [.interpreting, .grounding])
         XCTAssertNotNil(sut.latestResponse)
 
-        // 4. Start session (breathing)
-        sut.startSession()
-        XCTAssertEqual(sut.crisisPath, [.interpreting, .response, .breathing])
-
-        // 5. Finish session → check-in
         sut.finishSession()
-        XCTAssertEqual(sut.crisisPath, [.interpreting, .response, .breathing, .checkIn])
+        XCTAssertEqual(sut.crisisPath, [.interpreting, .grounding, .checkIn])
 
-        // 6. Complete flow
         sut.completeFlow()
         XCTAssertFalse(sut.isCrisisFlowActive)
         XCTAssertTrue(sut.crisisPath.isEmpty)
     }
 
     func test_fullSkipPath_demoMode() async {
-        // 1. Start flow
         sut.startCrisisFlow()
 
-        // 2. Skip capture
         sut.skipCapture()
         XCTAssertEqual(sut.crisisPath, [.interpreting])
         XCTAssertNil(sut.context.userText)
 
-        // 3. AI interprets without text
         await sut.interpretCurrentContext()
-        XCTAssertEqual(sut.crisisPath, [.interpreting, .response])
+        XCTAssertEqual(sut.crisisPath, [.interpreting, .grounding])
 
-        // 4. Start session → breathing
-        sut.startSession()
-        XCTAssertEqual(sut.crisisPath.last, .breathing)
-
-        // 5. Finish → check-in
         sut.finishSession()
         XCTAssertEqual(sut.crisisPath.last, .checkIn)
 
-        // 6. Complete
         sut.completeFlow()
         XCTAssertFalse(sut.isCrisisFlowActive)
     }
@@ -251,7 +313,6 @@ final class SessionFlowViewModelTests: XCTestCase {
         sut.submitCapture(text: "test")
         await sut.interpretCurrentContext()
 
-        // User taps X mid-flow
         sut.completeFlow()
 
         XCTAssertFalse(sut.isCrisisFlowActive)
@@ -262,8 +323,8 @@ final class SessionFlowViewModelTests: XCTestCase {
     // MARK: - AppRoute
 
     func test_appRoute_isHashable() {
-        let set: Set<AppRoute> = [.capture, .interpreting, .response, .breathing, .grounding, .reframe, .checkIn]
-        XCTAssertEqual(set.count, 7)
+        let set: Set<AppRoute> = [.capture, .interpreting, .response, .breathing, .grounding, .reframe, .checkIn, .specialists, .bookingConfirmation]
+        XCTAssertEqual(set.count, 9)
     }
 
     // MARK: - AIResponse Codable

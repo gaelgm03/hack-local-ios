@@ -35,6 +35,14 @@ struct CrisisGroundingView: View {
                     let step = steps[currentStep]
 
                     VStack(spacing: 24) {
+                        if let empathy = flow.latestResponse?.empathy {
+                            Text(empathy)
+                                .font(CalmlyTypography.body)
+                                .foregroundStyle(CalmlyColors.textSecondary)
+                                .multilineTextAlignment(.center)
+                                .lineSpacing(4)
+                        }
+
                         Text("\(step.id)")
                             .font(.system(size: 96, weight: .bold, design: .rounded))
                             .foregroundStyle(CalmlyColors.accent)

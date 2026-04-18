@@ -9,25 +9,34 @@ struct CrisisFlowView: View {
         @Bindable var flow = flow
 
         NavigationStack(path: $flow.crisisPath) {
-            CrisisCaptureView()
+            destinationView(for: flow.crisisRoot)
                 .navigationDestination(for: AppRoute.self) { route in
-                    switch route {
-                    case .capture:
-                        CrisisCaptureView()
-                    case .interpreting:
-                        CrisisInterpretingView()
-                    case .response:
-                        CrisisResponseView()
-                    case .breathing:
-                        CrisisBreathingView()
-                    case .grounding:
-                        CrisisGroundingView()
-                    case .reframe:
-                        CrisisReframeView()
-                    case .checkIn:
-                        CrisisCheckInView()
-                    }
+                    destinationView(for: route)
                 }
+        }
+    }
+
+    @ViewBuilder
+    private func destinationView(for route: AppRoute) -> some View {
+        switch route {
+        case .capture:
+            CrisisCaptureView()
+        case .interpreting:
+            CrisisInterpretingView()
+        case .response:
+            CrisisResponseView()
+        case .breathing:
+            CrisisBreathingView()
+        case .grounding:
+            CrisisGroundingView()
+        case .reframe:
+            CrisisReframeView()
+        case .checkIn:
+            CrisisCheckInView()
+        case .specialists:
+            MapPlaceholderView()
+        case .bookingConfirmation:
+            BookingConfirmationView()
         }
     }
 }

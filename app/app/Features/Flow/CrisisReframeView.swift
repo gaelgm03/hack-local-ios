@@ -29,7 +29,16 @@ struct CrisisReframeView: View {
                         .font(.system(size: 40, weight: .medium))
                         .foregroundStyle(CalmlyColors.accent)
 
-                    Text("Cambiemos el ángulo")
+                    if let empathy = flow.latestResponse?.empathy {
+                        Text(empathy)
+                            .font(CalmlyTypography.body)
+                            .foregroundStyle(CalmlyColors.textSecondary)
+                            .multilineTextAlignment(.center)
+                            .lineSpacing(4)
+                            .padding(.horizontal, 28)
+                    }
+
+                    Text("Cambiemos el angulo")
                         .font(CalmlyTypography.largeTitle)
                         .foregroundStyle(CalmlyColors.textPrimary)
                         .multilineTextAlignment(.center)
