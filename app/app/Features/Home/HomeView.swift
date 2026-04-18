@@ -108,33 +108,23 @@ struct HomeView: View {
     }
 
     private var hero: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 14) {
             Text("calmly")
                 .font(.system(size: 30, weight: .bold, design: .rounded))
                 .foregroundStyle(primaryTextColor.opacity(0.9))
                 .tracking(0.8)
 
-            Text("30 segundos")
-                .font(CalmlyTypography.caption)
-                .foregroundStyle(primaryTextColor.opacity(0.72))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(
-                    Capsule(style: .continuous)
-                        .fill(lightMode ? .white.opacity(0.72) : .white.opacity(0.08))
-                )
-
-            Text("Una pausa clara en el peor minuto.")
-                .font(.system(size: 36, weight: .bold, design: .rounded))
+            Text("Recupera control en 30 segundos.")
+                .font(.system(size: 38, weight: .bold, design: .rounded))
                 .foregroundStyle(primaryTextColor)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 28)
 
-            Text("Entra, respira y vuelve a tomar control sin convertir la ayuda en otra tarea.")
+            Text("Abre, respira y sigue.")
                 .font(CalmlyTypography.body)
                 .foregroundStyle(primaryTextColor.opacity(0.72))
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
+                .padding(.horizontal, 48)
 
             if flow.demoModeEnabled {
                 Text("Modo demo activo")
@@ -152,97 +142,56 @@ struct HomeView: View {
     }
 
     private var actionPanel: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 18) {
             Button {
                 flow.startImmediatePauseFlow()
             } label: {
-                HStack(spacing: 16) {
-                    ZStack {
-                        Circle()
-                            .fill(Color.white.opacity(lightMode ? 0.86 : 0.12))
-                            .frame(width: 68, height: 68)
+                VStack(spacing: 14) {
+                    Image(lightMode ? "CalmlyMascotLight" : "CalmlyMascotDark")
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 156, height: 156)
+                        .clipShape(Circle())
+                        .overlay {
+                            Circle()
+                                .stroke(Color.white.opacity(lightMode ? 0.42 : 0.18), lineWidth: 1)
+                        }
+                        .shadow(color: Color(hex: "B8A9E8").opacity(lightMode ? 0.12 : 0.22), radius: 28, y: 12)
 
-                        Image(systemName: "wind")
-                            .font(.system(size: 28, weight: .semibold))
-                            .foregroundStyle(primaryTextColor)
-                    }
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Necesito una pausa")
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color.black.opacity(0.82))
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.84)
-
-                        Text("Empieza ahora")
-                            .font(CalmlyTypography.body)
-                            .foregroundStyle(Color.black.opacity(0.62))
-                    }
-
-                    Spacer()
-
-                    Image(systemName: "arrow.right")
-                        .font(.system(size: 18, weight: .bold))
-                        .foregroundStyle(Color.black.opacity(0.62))
+                    Text("Necesito una pausa")
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundStyle(primaryTextColor)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 20)
-                .background(
-                    RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(hex: "EAA8EE"), Color(hex: "F5C6AA")],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                )
-                .shadow(color: Color(hex: "B8A9E8").opacity(lightMode ? 0.14 : 0.24), radius: 24, y: 10)
             }
             .buttonStyle(.plain)
 
             Button {
                 flow.startCrisisFlow()
             } label: {
-                HStack(alignment: .center, spacing: 14) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Agregar contexto opcional")
-                            .font(CalmlyTypography.body)
-                            .foregroundStyle(primaryTextColor)
-
-                        Text("Texto, voz o imagen si ayuda a personalizar")
-                            .font(CalmlyTypography.caption)
-                            .foregroundStyle(primaryTextColor.opacity(0.62))
-                    }
-
-                    Spacer()
-
+                HStack(spacing: 10) {
                     Image(systemName: "plus.circle.fill")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(primaryTextColor.opacity(0.8))
+
+                    Text("Agregar contexto")
+                        .font(CalmlyTypography.body)
+                        .foregroundStyle(primaryTextColor)
                 }
                 .padding(.horizontal, 18)
-                .padding(.vertical, 16)
+                .padding(.vertical, 14)
                 .background(
-                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                    Capsule(style: .continuous)
                         .fill(lightMode ? .white.opacity(0.74) : .white.opacity(0.06))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                            Capsule(style: .continuous)
                                 .stroke(primaryTextColor.opacity(0.12), lineWidth: 1)
                         )
                 )
             }
             .buttonStyle(.plain)
         }
-        .padding(18)
-        .background(
-            RoundedRectangle(cornerRadius: 30, style: .continuous)
-                .fill(lightMode ? .white.opacity(0.18) : .white.opacity(0.05))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 30, style: .continuous)
-                        .stroke(primaryTextColor.opacity(0.08), lineWidth: 1)
-                )
-        )
     }
 
     private var primaryTextColor: Color {
