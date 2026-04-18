@@ -3,29 +3,28 @@ import SwiftUI
 /// Loading screen while AI interprets context. Shows pulsing orb + subtitle.
 struct CrisisInterpretingView: View {
     @Environment(SessionFlowViewModel.self) private var flow
-    @State private var orbScale: CGFloat = 0.85
-    @State private var orbOpacity: Double = 0.6
+    @State private var glowOpacity: Double = 0.06
 
     var body: some View {
         ZStack {
             CalmlyColors.background.ignoresSafeArea()
 
+            RadialGradient(
+                colors: [
+                    Color(hex: "B8A9E8").opacity(glowOpacity),
+                    Color(hex: "F5C6AA").opacity(glowOpacity * 0.5),
+                    Color.clear
+                ],
+                center: .center,
+                startRadius: 30,
+                endRadius: 260
+            )
+            .ignoresSafeArea()
+
             VStack(spacing: 36) {
                 Spacer()
 
-                ZStack {
-                    Circle()
-                        .fill(CalmlyColors.primaryGradient)
-                        .frame(width: 180, height: 180)
-                        .scaleEffect(orbScale)
-                        .opacity(orbOpacity)
-                        .blur(radius: 8)
-
-                    Circle()
-                        .fill(CalmlyColors.primaryGradient)
-                        .frame(width: 120, height: 120)
-                        .scaleEffect(orbScale * 0.9)
-                }
+                OrbView(size: 160, pulse: true)
 
                 Text("Entendiendo tu momento...")
                     .font(CalmlyTypography.title)
@@ -51,9 +50,8 @@ struct CrisisInterpretingView: View {
         }
         .navigationBarBackButtonHidden(true)
         .onAppear {
-            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
-                orbScale = 1.15
-                orbOpacity = 1.0
+            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                glowOpacity = 0.14
             }
             Task { await flow.interpretCurrentContext() }
         }

@@ -6,8 +6,10 @@ struct CrisisBreathingView: View {
 
     @State private var phase: BreathPhase = .inhale
     @State private var orbScale: CGFloat = 0.6
+    @State private var glowScale: CGFloat = 0.55
     @State private var secondsRemaining = 30
     @State private var timerActive = true
+    @State private var backgroundGlow: Double = 0.08
 
     private let inhaleDuration: Double = 4
     private let holdDuration: Double = 4
@@ -22,6 +24,18 @@ struct CrisisBreathingView: View {
     var body: some View {
         ZStack {
             CalmlyColors.background.ignoresSafeArea()
+
+            RadialGradient(
+                colors: [
+                    Color(hex: "B8A9E8").opacity(backgroundGlow),
+                    Color(hex: "F5C6AA").opacity(backgroundGlow * 0.5),
+                    Color.clear
+                ],
+                center: .center,
+                startRadius: 40,
+                endRadius: 300
+            )
+            .ignoresSafeArea()
 
             VStack(spacing: 0) {
                 HStack {
@@ -39,30 +53,85 @@ struct CrisisBreathingView: View {
 
                 ZStack {
                     Circle()
-                        .fill(CalmlyColors.primaryGradient)
-                        .frame(width: 200, height: 200)
-                        .scaleEffect(orbScale)
-                        .opacity(0.3)
-                        .blur(radius: 20)
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    Color(hex: "B8A9E8").opacity(0.12),
+                                    Color(hex: "F5C6AA").opacity(0.06),
+                                    Color.clear
+                                ],
+                                center: .center,
+                                startRadius: 20,
+                                endRadius: 160
+                            )
+                        )
+                        .frame(width: 320, height: 320)
+                        .scaleEffect(glowScale)
+                        .blur(radius: 30)
 
                     Circle()
-                        .fill(CalmlyColors.primaryGradient)
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    Color(hex: "B8A9E8").opacity(0.35),
+                                    Color(hex: "F5C6AA").opacity(0.2),
+                                    Color.clear
+                                ],
+                                center: .center,
+                                startRadius: 10,
+                                endRadius: 110
+                            )
+                        )
+                        .frame(width: 220, height: 220)
+                        .scaleEffect(orbScale)
+                        .blur(radius: 14)
+
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    Color.white.opacity(0.7),
+                                    Color(hex: "B8A9E8").opacity(0.75),
+                                    Color(hex: "F5C6AA").opacity(0.5)
+                                ],
+                                center: .center,
+                                startRadius: 8,
+                                endRadius: 80
+                            )
+                        )
                         .frame(width: 160, height: 160)
                         .scaleEffect(orbScale)
-                        .opacity(0.6)
-                        .blur(radius: 6)
+                        .blur(radius: 2)
 
                     Circle()
-                        .fill(CalmlyColors.primaryGradient)
-                        .frame(width: 120, height: 120)
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    Color.white.opacity(0.92),
+                                    Color(hex: "B8A9E8").opacity(0.85),
+                                    Color(hex: "F5C6AA").opacity(0.65)
+                                ],
+                                center: .center,
+                                startRadius: 5,
+                                endRadius: 55
+                            )
+                        )
+                        .frame(width: 110, height: 110)
+                        .scaleEffect(orbScale)
+
+                    Circle()
+                        .stroke(Color.white.opacity(0.18), lineWidth: 1.2)
+                        .frame(width: 130, height: 130)
                         .scaleEffect(orbScale)
                 }
+                .shadow(color: Color(hex: "B8A9E8").opacity(0.3), radius: 40, y: 6)
 
                 Text(phase.rawValue)
                     .font(CalmlyTypography.title)
                     .foregroundStyle(CalmlyColors.textPrimary)
                     .padding(.top, 32)
-                    .animation(.easeInOut(duration: 0.3), value: phase)
+                    .contentTransition(.opacity)
+                    .animation(.easeInOut(duration: 0.4), value: phase)
 
                 if let script = flow.latestResponse?.script {
                     Text(script)
@@ -98,6 +167,10 @@ struct CrisisBreathingView: View {
         phase = .inhale
         withAnimation(.easeInOut(duration: inhaleDuration)) {
             orbScale = 1.2
+            backgroundGlow = 0.14
+        }
+        withAnimation(.easeInOut(duration: inhaleDuration + 0.3)) {
+            glowScale = 1.15
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + inhaleDuration) {
@@ -111,6 +184,10 @@ struct CrisisBreathingView: View {
                 phase = .exhale
                 withAnimation(.easeInOut(duration: exhaleDuration)) {
                     orbScale = 0.6
+                    backgroundGlow = 0.08
+                }
+                withAnimation(.easeInOut(duration: exhaleDuration + 0.3)) {
+                    glowScale = 0.55
                 }
 
                 DispatchQueue.main.asyncAfter(deadline: .now() + exhaleDuration) {

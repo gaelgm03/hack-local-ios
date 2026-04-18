@@ -3,7 +3,10 @@ import SwiftUI
 /// Displays the AI's empathetic message and a CTA to begin the micro-session.
 struct CrisisResponseView: View {
     @Environment(SessionFlowViewModel.self) private var flow
-    @State private var showContent = false
+    @State private var showEmpathy = false
+    @State private var showWave = false
+    @State private var showLabel = false
+    @State private var showButton = false
 
     var body: some View {
         ZStack {
@@ -33,17 +36,19 @@ struct CrisisResponseView: View {
                             .foregroundStyle(CalmlyColors.textPrimary)
                             .multilineTextAlignment(.center)
                             .lineSpacing(6)
-                            .opacity(showContent ? 1 : 0)
-                            .offset(y: showContent ? 0 : 20)
+                            .opacity(showEmpathy ? 1 : 0)
+                            .offset(y: showEmpathy ? 0 : 20)
 
                         SiriWaveView()
                             .frame(height: 64)
-                            .opacity(showContent ? 1 : 0)
+                            .opacity(showWave ? 1 : 0)
+                            .scaleEffect(showWave ? 1 : 0.8)
 
                         sessionLabel(for: response.type)
                             .font(CalmlyTypography.caption)
                             .foregroundStyle(CalmlyColors.textSecondary)
-                            .opacity(showContent ? 1 : 0)
+                            .opacity(showLabel ? 1 : 0)
+                            .offset(y: showLabel ? 0 : 10)
                     }
                     .padding(.horizontal, 32)
                 }
@@ -55,13 +60,23 @@ struct CrisisResponseView: View {
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 40)
-                .opacity(showContent ? 1 : 0)
+                .opacity(showButton ? 1 : 0)
+                .offset(y: showButton ? 0 : 16)
             }
         }
         .navigationBarBackButtonHidden(true)
         .onAppear {
             withAnimation(.easeOut(duration: 0.8).delay(0.3)) {
-                showContent = true
+                showEmpathy = true
+            }
+            withAnimation(.easeOut(duration: 0.7).delay(0.7)) {
+                showWave = true
+            }
+            withAnimation(.easeOut(duration: 0.6).delay(1.0)) {
+                showLabel = true
+            }
+            withAnimation(.easeOut(duration: 0.7).delay(1.3)) {
+                showButton = true
             }
         }
     }

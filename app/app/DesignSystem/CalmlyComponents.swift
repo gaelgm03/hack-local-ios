@@ -48,6 +48,15 @@ struct CalmlyCard<Content: View>: View {
     }
 }
 
+struct CalmlyPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.96 : 1.0)
+            .opacity(configuration.isPressed ? 0.85 : 1.0)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: configuration.isPressed)
+    }
+}
+
 struct CalmlyPrimaryButton: View {
     let title: String
     let action: () -> Void
@@ -64,6 +73,6 @@ struct CalmlyPrimaryButton: View {
                         .fill(CalmlyColors.primaryGradient)
                 )
         }
-        .buttonStyle(.plain)
+        .buttonStyle(CalmlyPressStyle())
     }
 }
