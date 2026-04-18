@@ -18,7 +18,6 @@ final class SpeechService {
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private var transcript = ""
-    private var autoStopTask: Task<Void, Never>?
     private var isListening = false
 
     func requestPermissionsIfNeeded() async -> Bool {
@@ -84,21 +83,10 @@ final class SpeechService {
             }
         }
 
-        autoStopTask = Task { [weak self] in
-            do {
-                try await Task.sleep(nanoseconds: 5_000_000_000)
-            } catch {
-                return
-            }
-            guard !Task.isCancelled else { return }
-            _ = self?.stopListening()
-        }
     }
 
     @discardableResult
     func stopListening() -> String? {
-        autoStopTask?.cancel()
-        autoStopTask = nil
         isListening = false
 
         if audioEngine.isRunning {

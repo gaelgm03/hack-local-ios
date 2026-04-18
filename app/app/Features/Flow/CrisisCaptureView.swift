@@ -14,6 +14,8 @@ struct CrisisCaptureView: View {
     @State private var cameraService = CameraService()
     @State private var speechService = SpeechService()
     @FocusState private var isFocused: Bool
+    @State private var isSubmitting = false
+    @State private var recordingTask: Task<Void, Never>?
 
     var body: some View {
         ZStack {
@@ -29,7 +31,9 @@ struct CrisisCaptureView: View {
                             .foregroundStyle(CalmlyColors.textSecondary)
                             .frame(width: 44, height: 44)
                     }
+
                     Spacer()
+
                     Button("Saltar") {
                         flow.skipCapture()
                     }
@@ -59,7 +63,7 @@ struct CrisisCaptureView: View {
                 VStack(spacing: 20) {
                     HStack(spacing: 12) {
                         Button {
-                            isFocused = false
+                            dismissTextInput()
                             Task { await capturePhoto() }
                         } label: {
                             Label(isCapturingPhoto ? "Tomando foto..." : photoButtonTitle, systemImage: "camera")
@@ -73,10 +77,10 @@ struct CrisisCaptureView: View {
                                 )
                         }
                         .buttonStyle(.plain)
-                        .disabled(isCapturingPhoto)
+                        .disabled(isCapturingPhoto || isSubmitting)
 
                         Button {
-                            isFocused = false
+                            dismissTextInput()
                             Task { await toggleVoiceCapture() }
                         } label: {
                             Label(
@@ -93,6 +97,7 @@ struct CrisisCaptureView: View {
                             )
                         }
                         .buttonStyle(.plain)
+                        .disabled(isSubmitting)
                     }
 
                     if let image = capturedImage {
@@ -131,26 +136,36 @@ struct CrisisCaptureView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
 
-                    TextField("Estoy...", text: $userText, axis: .vertical)
-                        .lineLimit(3...6)
-                        .font(CalmlyTypography.empathyMessage)
-                        .foregroundStyle(CalmlyColors.textPrimary)
-                        .padding(16)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .fill(CalmlyColors.surface)
-                        )
-                        .focused($isFocused)
-                        .submitLabel(.done)
+                    ZStack(alignment: .topLeading) {
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .fill(CalmlyColors.surface)
+
+                        if userText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            Text("Estoy...")
+                                .font(CalmlyTypography.empathyMessage)
+                                .foregroundStyle(CalmlyColors.textSecondary)
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 24)
+                                .allowsHitTesting(false)
+                        }
+
+                        TextEditor(text: $userText)
+                            .font(CalmlyTypography.empathyMessage)
+                            .foregroundStyle(CalmlyColors.textPrimary)
+                            .scrollContentBackground(.hidden)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 14)
+                            .frame(minHeight: 120)
+                            .focused($isFocused)
+                            .autocorrectionDisabled(true)
+                            .textInputAutocapitalization(.sentences)
+                            .disabled(isRecordingVoice)
+                    }
 
                     CalmlyPrimaryButton(title: "Siguiente") {
-                        isFocused = false
-                        if isRecordingVoice {
-                            transcript = speechService.stopListening()
-                            isRecordingVoice = false
-                        }
-                        flow.submitCapture(text: userText, transcript: transcript, image: capturedImage)
+                        submitCapture()
                     }
+                    .opacity(isSubmitting ? 0.7 : 1.0)
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 40)
@@ -158,7 +173,10 @@ struct CrisisCaptureView: View {
         }
         .navigationBarBackButtonHidden(true)
         .onDisappear {
-            isFocused = false
+            dismissTextInput()
+            recordingTask?.cancel()
+            recordingTask = nil
+
             if isRecordingVoice {
                 transcript = speechService.stopListening()
                 isRecordingVoice = false
@@ -192,6 +210,8 @@ struct CrisisCaptureView: View {
         speechError = nil
 
         if isRecordingVoice {
+            recordingTask?.cancel()
+            recordingTask = nil
             transcript = speechService.stopListening()
             isRecordingVoice = false
             return
@@ -207,12 +227,18 @@ struct CrisisCaptureView: View {
             try speechService.startListening()
             isRecordingVoice = true
 
-            Task {
-                try? await Task.sleep(nanoseconds: 5_200_000_000)
-                if isRecordingVoice {
-                    transcript = speechService.stopListening()
-                    isRecordingVoice = false
+            recordingTask?.cancel()
+            recordingTask = Task { @MainActor in
+                do {
+                    try await Task.sleep(nanoseconds: 5_200_000_000)
+                } catch {
+                    return
                 }
+
+                guard isRecordingVoice else { return }
+                transcript = speechService.stopListening()
+                isRecordingVoice = false
+                recordingTask = nil
             }
         } catch SpeechService.SpeechServiceError.invalidAudioFormat {
             speechError = "No encontré una entrada de audio válida. Prueba en un dispositivo físico."
@@ -221,6 +247,34 @@ struct CrisisCaptureView: View {
             speechError = "No pude iniciar la grabación. Puedes continuar con texto."
             isRecordingVoice = false
         }
+    }
+
+    private func submitCapture() {
+        guard !isSubmitting else { return }
+        isSubmitting = true
+        dismissTextInput()
+
+        if isRecordingVoice {
+            recordingTask?.cancel()
+            recordingTask = nil
+            transcript = speechService.stopListening()
+            isRecordingVoice = false
+        }
+
+        let textToSubmit = userText
+        let transcriptToSubmit = transcript
+        let imageToSubmit = capturedImage
+
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            flow.submitCapture(text: textToSubmit, transcript: transcriptToSubmit, image: imageToSubmit)
+            isSubmitting = false
+        }
+    }
+
+    private func dismissTextInput() {
+        isFocused = false
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
 
