@@ -81,15 +81,18 @@ final class AmbientSensorService {
         guard !hasTapInstalled else { return }
 
         let inputNode = audioEngine.inputNode
-        let inputFormat = inputNode.inputFormat(forBus: 0)
-        let preferredBufferSize = max(1, Int(inputFormat.sampleRate / 10))
+        let tapFormat = inputNode.outputFormat(forBus: 0)
+        guard tapFormat.sampleRate > 0, tapFormat.channelCount > 0 else { return }
+
+        let preferredBufferSize = max(1024, Int(tapFormat.sampleRate / 10))
 
         inputNode.installTap(
             onBus: 0,
             bufferSize: AVAudioFrameCount(preferredBufferSize),
-            format: inputFormat
+            format: tapFormat
         ) { [weak self] buffer, _ in
             guard let self else { return }
+            guard buffer.frameLength > 0 else { return }
             let decibels = Self.decibels(from: buffer)
             Task { @MainActor [weak self] in
                 self?.applyMeterReading(decibels)
