@@ -114,7 +114,7 @@ struct HomeView: View {
                 .foregroundStyle(primaryTextColor.opacity(0.9))
                 .tracking(0.8)
 
-            Text("Recupera control en 30 segundos")
+            Text("Pausa, respira, vuelve")
                 .font(CalmlyTypography.body)
                 .foregroundStyle(primaryTextColor.opacity(0.72))
                 .multilineTextAlignment(.center)
