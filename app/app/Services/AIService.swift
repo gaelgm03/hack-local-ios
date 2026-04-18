@@ -41,11 +41,39 @@ final class AIService: Sendable {
     - Prefer words like momento, pausa, respira, contigo, juntos.
     - "empathy" must be max 2 short sentences and readable in under 5 seconds.
     - "script" must be 1-2 short sentences with concrete instructions.
-    - If ambient noise is above 70 dB, always choose "breathing".
-    - If the text mentions people or social pressure, prefer "grounding".
-    - If the text mentions worry, thoughts or the future, prefer "reframe".
-    - Default to "breathing" when unsure.
+    - Choose "grounding" when the context suggests crowds, concerts, public spaces, too many people, social pressure, overstimulation, busy environments, classrooms, offices, presentations, or feeling overloaded by the surroundings.
+    - Choose "reframe" when the context is mostly about thoughts, self-judgment, frustration, future worries, rumination, pressure to succeed, body image, or mental spiraling.
+    - Choose "breathing" when the context is mostly intense body activation, loud sensory input, urgency, or when a fast body reset is the safest first step.
+    - If ambient noise is above 70 dB, strongly prefer "breathing" unless the user is clearly describing social overwhelm or rumination.
+    - Do not default to "breathing" just because the user feels overwhelmed.
+    - If the context mentions many people, a crowd, a concert, a party, a busy room, or social pressure, prefer "grounding".
     """
+
+    private static let groundingKeywords = [
+        "gente", "personas", "mucha gente", "demasiada gente", "amigos", "familia", "salón", "salon",
+        "reunión", "reunion", "clase", "oficina", "presentación", "presentacion", "hablar", "multitud",
+        "concierto", "festival", "fiesta", "social", "presión social", "presion social", "lugar lleno",
+        "crowd", "crowded", "concert", "festival", "party", "too many people", "a lot of people", "people",
+        "social pressure", "busy room", "presentation", "classroom", "office", "audience", "stage",
+        "overstimulated", "overstimulating", "public", "packed"
+    ]
+
+    private static let reframeKeywords = [
+        "pienso", "pensando", "preocupa", "preocupada", "preocupado", "miedo", "futuro", "mañana", "manana",
+        "y si", "no dejo de pensar", "darle vueltas", "fracaso", "frustrada", "frustrado", "culpa", "culpable",
+        "peso", "bajar de peso", "cuerpo", "imagen", "comparo", "compararme", "no soy suficiente",
+        "presión", "presion", "exigencia", "expectativas", "todo me sale mal",
+        "thinking", "overthinking", "worried", "worry", "future", "what if", "can't stop thinking",
+        "ruminating", "spiraling", "spiralling", "frustrated", "failure", "pressure", "expectations",
+        "body", "weight", "lose weight", "not enough", "self-esteem", "self worth", "judging myself"
+    ]
+
+    private static let breathingKeywords = [
+        "no puedo respirar", "respirar", "me falta el aire", "agitado", "agitada", "tiemblo", "temblando",
+        "muy intenso", "muy rápido", "muy rapido", "ruido fuerte", "pánico", "panico", "colapsar",
+        "can't breathe", "breathing", "shaking", "heart racing", "panic", "too loud", "loud noise",
+        "urgent", "intense", "hyperventilating", "short of breath"
+    ]
 
     // MARK: - Public
 
@@ -72,23 +100,26 @@ final class AIService: Sendable {
         print("[AIService] demoInterpret context: \(debugSummary(for: context))")
         try await Task.sleep(nanoseconds: 1_300_000_000)
 
-        if (context.ambientNoiseLevel ?? 0) > 70 {
-            return AIResponse(
-                empathy: "Hay mucho ruido a tu alrededor. Estoy aquí contigo.",
-                type: .breathing,
-                script: "Inhala 4 segundos, sostén 4 y exhala 6. Repite conmigo."
-            )
-        }
-
-        if context.userText?.isEmpty == false || context.transcript?.isEmpty == false {
+        switch Self.preferredIntervention(for: context) {
+        case .breathing:
             return AIResponse(
                 empathy: "Gracias por contarme esto. Vamos un paso a la vez.",
                 type: .breathing,
                 script: "Inhala 4 segundos, sostén 4 y exhala 6. Repite conmigo."
             )
+        case .grounding:
+            return AIResponse(
+                empathy: "Tu entorno se siente cargado. Vamos a volver al presente juntos.",
+                type: .grounding,
+                script: "Nombra 5 cosas que ves, 4 que tocas y 3 que escuchas."
+            )
+        case .reframe:
+            return AIResponse(
+                empathy: "Se nota que esto te pesa por dentro. Vamos a aflojar un poco esa idea.",
+                type: .reframe,
+                script: "Piensa: qué hecho real tengo ahora, y qué presión estoy agregando yo."
+            )
         }
-
-        return Self.fallbackResponse(for: context)
     }
 
     // MARK: - Real API call
@@ -145,7 +176,7 @@ final class AIService: Sendable {
         let body: [String: Any] = [
             "model": APIConfig.model,
             "messages": messages,
-            "temperature": 0.5,
+            "temperature": 0.35,
             "max_tokens": 300,
             "response_format": ["type": "json_object"]
         ]
@@ -198,34 +229,32 @@ final class AIService: Sendable {
     }
 
     private static func preferredIntervention(for context: CalmlyContext) -> InterventionType {
-        if (context.ambientNoiseLevel ?? 0) > 70 {
-            return .breathing
-        }
-
         let combinedText = "\(context.userText ?? "") \(context.transcript ?? "")".lowercased()
-        if combinedText.isEmpty {
-            return .breathing
+        let breathingScore = score(for: combinedText, words: breathingKeywords) + ((context.ambientNoiseLevel ?? 0) > 70 ? 3 : 0)
+        let groundingScore = score(for: combinedText, words: groundingKeywords)
+        let reframeScore = score(for: combinedText, words: reframeKeywords)
+
+        if max(groundingScore, reframeScore, breathingScore) == 0 {
+            return (context.ambientNoiseLevel ?? 0) > 70 ? .breathing : .grounding
         }
 
-        if containsAny(
-            in: combinedText,
-            words: ["gente", "personas", "amigos", "familia", "salón", "salon", "reunión", "reunion", "clase", "oficina", "presentación", "presentacion", "hablar"]
-        ) {
+        if groundingScore >= reframeScore && groundingScore >= breathingScore {
             return .grounding
         }
 
-        if containsAny(
-            in: combinedText,
-            words: ["pienso", "pensando", "preocupa", "preocupada", "preocupado", "miedo", "futuro", "mañana", "manana", "y si", "no dejo de pensar", "darle vueltas"]
-        ) {
+        if reframeScore >= groundingScore && reframeScore >= breathingScore {
             return .reframe
         }
 
         return .breathing
     }
 
-    private static func containsAny(in text: String, words: [String]) -> Bool {
-        words.contains(where: text.contains)
+    private static func score(for text: String, words: [String]) -> Int {
+        words.reduce(into: 0) { score, word in
+            if text.contains(word) {
+                score += 1
+            }
+        }
     }
 
     private func debugSummary(for context: CalmlyContext) -> String {
