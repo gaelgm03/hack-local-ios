@@ -59,6 +59,7 @@ struct CrisisCaptureView: View {
                 VStack(spacing: 20) {
                     HStack(spacing: 12) {
                         Button {
+                            isFocused = false
                             Task { await capturePhoto() }
                         } label: {
                             Label(isCapturingPhoto ? "Tomando foto..." : photoButtonTitle, systemImage: "camera")
@@ -75,6 +76,7 @@ struct CrisisCaptureView: View {
                         .disabled(isCapturingPhoto)
 
                         Button {
+                            isFocused = false
                             Task { await toggleVoiceCapture() }
                         } label: {
                             Label(
@@ -142,6 +144,7 @@ struct CrisisCaptureView: View {
                         .submitLabel(.done)
 
                     CalmlyPrimaryButton(title: "Siguiente") {
+                        isFocused = false
                         if isRecordingVoice {
                             transcript = speechService.stopListening()
                             isRecordingVoice = false
@@ -154,10 +157,8 @@ struct CrisisCaptureView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
-        .onAppear {
-            isFocused = true
-        }
         .onDisappear {
+            isFocused = false
             if isRecordingVoice {
                 transcript = speechService.stopListening()
                 isRecordingVoice = false
@@ -213,6 +214,9 @@ struct CrisisCaptureView: View {
                     isRecordingVoice = false
                 }
             }
+        } catch SpeechService.SpeechServiceError.invalidAudioFormat {
+            speechError = "No encontré una entrada de audio válida. Prueba en un dispositivo físico."
+            isRecordingVoice = false
         } catch {
             speechError = "No pude iniciar la grabación. Puedes continuar con texto."
             isRecordingVoice = false

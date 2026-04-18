@@ -118,10 +118,14 @@ final class AmbientSensorService {
 
     private func requestMicrophonePermission() async -> Bool {
         await withCheckedContinuation { continuation in
-            audioSession.requestRecordPermission { granted in
+            requestMicrophonePermission { granted in
                 continuation.resume(returning: granted)
             }
         }
+    }
+
+    private func requestMicrophonePermission(_ completion: @escaping (Bool) -> Void) {
+        AVAudioApplication.requestRecordPermission(completionHandler: completion)
     }
 
     nonisolated private static func decibels(from buffer: AVAudioPCMBuffer) -> Double {

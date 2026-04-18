@@ -8,6 +8,7 @@ final class SpeechService {
         case recognizerUnavailable
         case permissionsMissing
         case audioEngineFailed
+        case invalidAudioFormat
     }
 
     private let recognizer = SFSpeechRecognizer(locale: Locale(identifier: "es-MX"))
@@ -51,8 +52,13 @@ final class SpeechService {
 
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
+        guard recordingFormat.sampleRate > 0, recordingFormat.channelCount > 0 else {
+            throw SpeechServiceError.invalidAudioFormat
+        }
+
         inputNode.removeTap(onBus: 0)
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
+            guard buffer.frameLength > 0 else { return }
             self?.recognitionRequest?.append(buffer)
         }
 
@@ -88,6 +94,7 @@ final class SpeechService {
         }
 
         recognitionRequest?.endAudio()
+        recognitionTask?.finish()
         recognitionTask?.cancel()
         recognitionTask = nil
         recognitionRequest = nil
@@ -105,8 +112,7 @@ final class SpeechService {
 
     private var hasSpeechPermissions: Bool {
         let speechStatus = SFSpeechRecognizer.authorizationStatus()
-        let micStatus = audioSession.recordPermission
-        return speechStatus == .authorized && micStatus == .granted
+        return speechStatus == .authorized && microphonePermission == .granted
     }
 
     private func requestSpeechAuthorizationIfNeeded() async -> Bool {
@@ -125,12 +131,12 @@ final class SpeechService {
     }
 
     private func requestMicrophoneAuthorizationIfNeeded() async -> Bool {
-        switch audioSession.recordPermission {
+        switch microphonePermission {
         case .granted:
             return true
         case .undetermined:
             return await withCheckedContinuation { continuation in
-                audioSession.requestRecordPermission { granted in
+                requestMicrophonePermission { granted in
                     continuation.resume(returning: granted)
                 }
             }
@@ -138,4 +144,25 @@ final class SpeechService {
             return false
         }
     }
+
+    private var microphonePermission: MicrophonePermission {
+        switch AVAudioApplication.recordPermission {
+        case .granted:
+            return .granted
+        case .undetermined:
+            return .undetermined
+        default:
+            return .denied
+        }
+    }
+
+    private func requestMicrophonePermission(_ completion: @escaping (Bool) -> Void) {
+        AVAudioApplication.requestRecordPermission(completionHandler: completion)
+    }
+}
+
+private enum MicrophonePermission {
+    case granted
+    case undetermined
+    case denied
 }
