@@ -2,7 +2,7 @@ import Foundation
 import UIKit
 
 /// Wraps the LLM API call. Sends context, returns structured AIResponse.
-final class AIService {
+final class AIService: Sendable {
 
     private static let fallbackResponse = AIResponse(
         empathy: "Estoy aquí contigo. Vamos a hacer una pausa juntos.",
