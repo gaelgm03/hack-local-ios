@@ -19,6 +19,12 @@ final class SpeechService {
     private var transcript = ""
     private var autoStopTask: Task<Void, Never>?
 
+    func requestPermissionsIfNeeded() async -> Bool {
+        let speechAuthorized = await requestSpeechAuthorizationIfNeeded()
+        guard speechAuthorized else { return false }
+        return await requestMicrophoneAuthorizationIfNeeded()
+    }
+
     func startListening() throws {
         guard recognizer?.isAvailable == true else {
             throw SpeechServiceError.recognizerUnavailable
@@ -101,5 +107,35 @@ final class SpeechService {
         let speechStatus = SFSpeechRecognizer.authorizationStatus()
         let micStatus = audioSession.recordPermission
         return speechStatus == .authorized && micStatus == .granted
+    }
+
+    private func requestSpeechAuthorizationIfNeeded() async -> Bool {
+        switch SFSpeechRecognizer.authorizationStatus() {
+        case .authorized:
+            return true
+        case .notDetermined:
+            return await withCheckedContinuation { continuation in
+                SFSpeechRecognizer.requestAuthorization { status in
+                    continuation.resume(returning: status == .authorized)
+                }
+            }
+        default:
+            return false
+        }
+    }
+
+    private func requestMicrophoneAuthorizationIfNeeded() async -> Bool {
+        switch audioSession.recordPermission {
+        case .granted:
+            return true
+        case .undetermined:
+            return await withCheckedContinuation { continuation in
+                audioSession.requestRecordPermission { granted in
+                    continuation.resume(returning: granted)
+                }
+            }
+        default:
+            return false
+        }
     }
 }

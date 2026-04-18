@@ -7,5 +7,6 @@ enum AppRoute: Hashable {
     case response
     case breathing
     case grounding
+    case reframe
     case checkIn
 }

@@ -22,6 +22,8 @@ struct CrisisFlowView: View {
                         CrisisBreathingView()
                     case .grounding:
                         CrisisGroundingView()
+                    case .reframe:
+                        CrisisReframeView()
                     case .checkIn:
                         CrisisCheckInView()
                     }

@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import Observation
 
 @Observable
@@ -37,6 +38,16 @@ final class SessionFlowViewModel {
         crisisPath.append(.interpreting)
     }
 
+    func submitCapture(text: String?, transcript: String?, image: UIImage?) {
+        let cleanText = text?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let cleanTranscript = transcript?.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        context.userText = cleanText?.isEmpty == false ? cleanText : nil
+        context.transcript = cleanTranscript?.isEmpty == false ? cleanTranscript : nil
+        context.image = image
+        crisisPath.append(.interpreting)
+    }
+
     func skipCapture() {
         crisisPath.append(.interpreting)
     }
@@ -65,7 +76,7 @@ final class SessionFlowViewModel {
         case .grounding:
             crisisPath.append(.grounding)
         case .reframe:
-            crisisPath.append(.breathing)
+            crisisPath.append(.reframe)
         }
     }
 

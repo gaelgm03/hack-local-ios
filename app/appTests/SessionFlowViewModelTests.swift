@@ -55,6 +55,17 @@ final class SessionFlowViewModelTests: XCTestCase {
         XCTAssertEqual(sut.crisisPath, [.interpreting])
     }
 
+    func test_submitCapture_withVoiceAndImage_setsFullContext() {
+        let image = UIImage()
+
+        sut.submitCapture(text: " Estoy mal ", transcript: " Respira conmigo ", image: image)
+
+        XCTAssertEqual(sut.context.userText, "Estoy mal")
+        XCTAssertEqual(sut.context.transcript, "Respira conmigo")
+        XCTAssertNotNil(sut.context.image)
+        XCTAssertEqual(sut.crisisPath, [.interpreting])
+    }
+
     // MARK: - skipCapture
 
     func test_skipCapture_navigatesToInterpreting() {
@@ -136,12 +147,12 @@ final class SessionFlowViewModelTests: XCTestCase {
         XCTAssertEqual(sut.crisisPath, [.grounding])
     }
 
-    func test_startSession_reframe_fallsBackToBreathing() {
+    func test_startSession_reframe_navigatesToReframe() {
         sut.latestResponse = AIResponse(empathy: "test", type: .reframe, script: "test")
 
         sut.startSession()
 
-        XCTAssertEqual(sut.crisisPath, [.breathing])
+        XCTAssertEqual(sut.crisisPath, [.reframe])
     }
 
     func test_startSession_noResponse_doesNothing() {
@@ -251,8 +262,8 @@ final class SessionFlowViewModelTests: XCTestCase {
     // MARK: - AppRoute
 
     func test_appRoute_isHashable() {
-        let set: Set<AppRoute> = [.capture, .interpreting, .response, .breathing, .grounding, .checkIn]
-        XCTAssertEqual(set.count, 6)
+        let set: Set<AppRoute> = [.capture, .interpreting, .response, .breathing, .grounding, .reframe, .checkIn]
+        XCTAssertEqual(set.count, 7)
     }
 
     // MARK: - AIResponse Codable

@@ -4,6 +4,7 @@ struct HomeView: View {
     @Environment(SessionFlowViewModel.self) private var flow
     @State private var lightMode = false
     @State private var homeVM = HomeViewModel()
+    @State private var showSettings = false
 
     var body: some View {
         @Bindable var flow = flow
@@ -15,7 +16,23 @@ struct HomeView: View {
 
                 VStack(alignment: .leading) {
                     HStack {
+                        Button {
+                            showSettings = true
+                        } label: {
+                            Label("Demo", systemImage: "slider.horizontal.3")
+                                .font(CalmlyTypography.body)
+                                .foregroundStyle(lightMode ? Color(hex: "222222") : .white)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .background(
+                                    Capsule(style: .continuous)
+                                        .fill(lightMode ? .white : .white.opacity(0.08))
+                                )
+                        }
+                        .buttonStyle(.plain)
+
                         Spacer()
+
                         Circle()
                             .fill(lightMode ? Color(hex: "3A383B") : Color(hex: "D9D9D9"))
                             .frame(width: 54, height: 54)
@@ -28,31 +45,28 @@ struct HomeView: View {
                     .padding(.horizontal, 28)
                     .padding(.top, 18)
 
-                    VStack(alignment: .leading, spacing: 22) {
-                        NavigationLink(destination: CheckInView()) {
-                            Text("notas")
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .contentShape(Rectangle())
-                        }
-                        NavigationLink(destination: GroundingSessionView()) {
-                            Text("calendario")
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .contentShape(Rectangle())
-                        }
-                        NavigationLink(destination: MapPlaceholderView()) {
-                            Text("mapa")
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .contentShape(Rectangle())
-                        }
-                        NavigationLink(destination: ResponseView()) {
-                            Text("config.")
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .contentShape(Rectangle())
+                    VStack(alignment: .leading, spacing: 18) {
+                        Text("calmly")
+                            .font(.system(size: 62, weight: .bold, design: .rounded))
+                            .foregroundStyle(lightMode ? Color(hex: "222222") : .white)
+
+                        Text("Una pausa guiada en el momento en que lo necesitas.")
+                            .font(CalmlyTypography.body)
+                            .foregroundStyle((lightMode ? Color(hex: "222222") : .white).opacity(0.72))
+                            .frame(maxWidth: 260, alignment: .leading)
+
+                        if flow.demoModeEnabled {
+                            Text("Modo demo activo")
+                                .font(CalmlyTypography.caption)
+                                .foregroundStyle(lightMode ? Color(hex: "222222") : .white)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(
+                                    Capsule(style: .continuous)
+                                        .fill(Color(hex: "F5C6AA").opacity(lightMode ? 0.55 : 0.28))
+                                )
                         }
                     }
-                    .font(.system(size: 62, weight: .bold, design: .rounded))
-                    .foregroundStyle(lightMode ? Color(hex: "222222") : .white)
-                    .minimumScaleFactor(0.7)
                     .padding(.leading, 36)
                     .padding(.top, 90)
 
@@ -163,6 +177,12 @@ struct HomeView: View {
         }
         .fullScreenCover(isPresented: $flow.isCrisisFlowActive) {
             CrisisFlowView()
+                .environment(flow)
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsSheet()
+                .presentationDetents([.fraction(0.45)])
+                .presentationDragIndicator(.visible)
                 .environment(flow)
         }
     }
