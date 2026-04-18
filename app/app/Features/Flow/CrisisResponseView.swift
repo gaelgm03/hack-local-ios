@@ -7,6 +7,8 @@ struct CrisisResponseView: View {
     @State private var showWave = false
     @State private var showLabel = false
     @State private var showButton = false
+    @State private var ttsService = TTSService()
+    @State private var hasSpokenResponse = false
 
     var body: some View {
         ZStack {
@@ -16,6 +18,7 @@ struct CrisisResponseView: View {
                 HStack {
                     Spacer()
                     Button {
+                        ttsService.stop()
                         flow.completeFlow()
                     } label: {
                         Image(systemName: "xmark")
@@ -56,6 +59,7 @@ struct CrisisResponseView: View {
                 Spacer()
 
                 CalmlyPrimaryButton(title: sessionButtonTitle) {
+                    ttsService.stop()
                     flow.startSession()
                 }
                 .padding(.horizontal, 24)
@@ -78,15 +82,22 @@ struct CrisisResponseView: View {
             withAnimation(.easeOut(duration: 0.7).delay(1.3)) {
                 showButton = true
             }
+
+            guard !hasSpokenResponse, let empathy = flow.latestResponse?.empathy else { return }
+            hasSpokenResponse = true
+            ttsService.speak(empathy)
+        }
+        .onDisappear {
+            ttsService.stop()
         }
     }
 
     private var sessionButtonTitle: String {
         guard let response = flow.latestResponse else { return "Comenzar" }
         switch response.type {
-        case .breathing: return "Respira conmigo 30s"
-        case .grounding: return "Grounding 5-4-3-2-1"
-        case .reframe: return "Reflexionemos juntos"
+        case .breathing: return "Respira conmigo"
+        case .grounding: return "Vamos a conectar"
+        case .reframe: return "Vamos juntos"
         }
     }
 
@@ -98,7 +109,7 @@ struct CrisisResponseView: View {
         case .grounding:
             Label("Grounding 5-4-3-2-1", systemImage: "hand.raised")
         case .reframe:
-            Label("Reencuadre", systemImage: "lightbulb")
+            Label("Reencuadre suave", systemImage: "lightbulb")
         }
     }
 }

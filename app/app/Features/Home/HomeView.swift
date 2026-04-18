@@ -58,8 +58,9 @@ struct HomeView: View {
 
                     Spacer()
 
-                    VStack(spacing: 12) {
+                    VStack(spacing: 16) {
                         Button {
+                            homeVM.dismissAmbientBanner()
                             flow.startCrisisFlow()
                         } label: {
                             ZStack {
@@ -73,10 +74,11 @@ struct HomeView: View {
                         }
                         .buttonStyle(.plain)
 
-                        Text("crisis?")
-                            .font(.system(size: 62, weight: .bold, design: .rounded))
+                        Text("Necesito una pausa")
+                            .font(.system(size: 42, weight: .bold, design: .rounded))
+                            .multilineTextAlignment(.center)
                             .foregroundStyle(Color(hex: "F09AF3"))
-                            .padding(.top, 8)
+                            .padding(.horizontal, 32)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.bottom, 56)
@@ -90,22 +92,18 @@ struct HomeView: View {
                             .font(.system(size: 20, weight: .medium))
                             .foregroundStyle(Color(hex: "B8A9E8"))
 
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Parece ruidoso aquí.")
-                                .font(CalmlyTypography.body)
-                                .foregroundStyle(.white)
-                            Text("¿Pausa de 30s?")
-                                .font(CalmlyTypography.caption)
-                                .foregroundStyle(.white.opacity(0.7))
-                        }
+                        Text("Parece ruidoso aquí. ¿Pausa de 30s?")
+                            .font(CalmlyTypography.body)
+                            .foregroundStyle(.white)
+                            .multilineTextAlignment(.leading)
 
                         Spacer()
 
                         Button {
                             withAnimation(.easeOut(duration: 0.3)) {
-                                homeVM.showAmbientBanner = false
+                                homeVM.dismissAmbientBanner()
                             }
-                            flow.startCrisisFlow()
+                            flow.startAmbientCrisisFlow(noiseLevel: homeVM.ambientNoiseLevel)
                         } label: {
                             Text("Sí")
                                 .font(CalmlyTypography.title)
@@ -127,7 +125,7 @@ struct HomeView: View {
 
                         Button {
                             withAnimation(.easeOut(duration: 0.3)) {
-                                homeVM.showAmbientBanner = false
+                                homeVM.dismissAmbientBanner()
                             }
                         } label: {
                             Image(systemName: "xmark")
@@ -145,6 +143,21 @@ struct HomeView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+        }
+        .task {
+            await homeVM.startMonitoring()
+        }
+        .onDisappear {
+            homeVM.stopMonitoring()
+        }
+        .onChange(of: flow.isCrisisFlowActive) { _, isActive in
+            if isActive {
+                homeVM.stopMonitoring()
+            } else {
+                Task {
+                    await homeVM.startMonitoring()
                 }
             }
         }

@@ -33,7 +33,7 @@ struct CrisisCaptureView: View {
                 Spacer()
 
                 VStack(spacing: 24) {
-                    Text("¿Qué está pasando?")
+                    Text("¿Quieres contarme algo?")
                         .font(CalmlyTypography.largeTitle)
                         .foregroundStyle(CalmlyColors.textPrimary)
                         .multilineTextAlignment(.center)
@@ -48,7 +48,7 @@ struct CrisisCaptureView: View {
                 Spacer()
 
                 VStack(spacing: 20) {
-                    TextField("", text: $userText, axis: .vertical)
+                    TextField("Estoy...", text: $userText, axis: .vertical)
                         .lineLimit(3...6)
                         .font(CalmlyTypography.empathyMessage)
                         .foregroundStyle(CalmlyColors.textPrimary)

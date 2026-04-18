@@ -4,20 +4,47 @@ import UIKit
 /// Wraps the LLM API call. Sends context, returns structured AIResponse.
 final class AIService: Sendable {
 
-    private static let fallbackResponse = AIResponse(
+    private static let breathingFallback = AIResponse(
         empathy: "Estoy aquí contigo. Vamos a hacer una pausa juntos.",
         type: .breathing,
-        script: "Inhala 4 segundos, sostén 4 y exhala 6. Repite conmigo por 30 segundos."
+        script: "Inhala 4 segundos, sostén 4 y exhala 6. Repite conmigo."
+    )
+
+    private static let groundingFallback = AIResponse(
+        empathy: "Este momento se siente intenso. Vamos a conectar con lo que te rodea.",
+        type: .grounding,
+        script: "Nombra 5 cosas que puedes ver, 4 que puedes tocar y 3 que puedes oír."
+    )
+
+    private static let reframeFallback = AIResponse(
+        empathy: "Lo que sientes es válido. Vamos a verlo desde otro ángulo.",
+        type: .reframe,
+        script: "Piensa: ¿qué le dirías a un amigo en este momento? Ahora dilo para ti."
     )
 
     private static let systemPrompt = """
-    You are a warm, human companion (NOT a therapist). The user is likely overwhelmed.
-    Given their context (text and/or noise level), respond with:
-    1. One empathetic sentence acknowledging what you notice.
-    2. One gentle invitation to a 30s practice.
-    Output ONLY valid JSON: { "empathy": "...", "type": "breathing|grounding|reframe", "script": "..." }
-    Tone: como un amigo cercano. Always respond in Spanish. Never clinical. Never use the word "ansiedad" or "trastorno".
-    The "script" field should contain the instructions for the chosen intervention in 1-2 sentences.
+    You are Calmly: a warm, human companion, never a therapist and never a bot.
+    The user is likely overwhelmed.
+
+    Given their context (text and/or ambient noise and/or image), respond with:
+    1. One empathetic sentence acknowledging what you notice. Be specific to the context.
+    2. One gentle invitation to a 30-second practice.
+
+    Output ONLY valid JSON:
+    { "empathy": "...", "type": "breathing|grounding|reframe", "script": "..." }
+
+    Rules:
+    - Always respond in Spanish.
+    - Use tuteo, present tense, warm and familiar language.
+    - Sound like a close friend who notices what is happening and stays with the user.
+    - Never use clinical words like ansiedad, trastorno, síntoma, diagnóstico, terapia or pánico.
+    - Prefer words like momento, pausa, respira, contigo, juntos.
+    - "empathy" must be max 2 short sentences and readable in under 5 seconds.
+    - "script" must be 1-2 short sentences with concrete instructions.
+    - If ambient noise is above 70 dB, always choose "breathing".
+    - If the text mentions people or social pressure, prefer "grounding".
+    - If the text mentions worry, thoughts or the future, prefer "reframe".
+    - Default to "breathing" when unsure.
     """
 
     // MARK: - Public
@@ -28,7 +55,7 @@ final class AIService: Sendable {
         }
 
         guard APIConfig.hasValidKey else {
-            return Self.fallbackResponse
+            return Self.fallbackResponse(for: context)
         }
 
         return await realInterpret(context: context)
@@ -39,37 +66,32 @@ final class AIService: Sendable {
     private func demoInterpret(context: CalmlyContext) async throws -> AIResponse {
         try await Task.sleep(nanoseconds: 1_300_000_000)
 
-        let baseEmpathy = context.userText?.isEmpty == false
-            ? "Gracias por contarme esto. Estoy contigo y vamos un paso a la vez."
-            : "Parece que este momento se siente intenso. Estoy aquí contigo."
+        if (context.ambientNoiseLevel ?? 0) > 70 {
+            return AIResponse(
+                empathy: "Hay mucho ruido a tu alrededor. Estoy aquí contigo.",
+                type: .breathing,
+                script: "Inhala 4 segundos, sostén 4 y exhala 6. Repite conmigo."
+            )
+        }
 
-        return AIResponse(
-            empathy: baseEmpathy,
-            type: .breathing,
-            script: "Inhala 4 segundos, sostén 4 y exhala 6. Repite conmigo por 30 segundos."
-        )
+        if context.userText?.isEmpty == false || context.transcript?.isEmpty == false {
+            return AIResponse(
+                empathy: "Gracias por contarme esto. Vamos un paso a la vez.",
+                type: .breathing,
+                script: "Inhala 4 segundos, sostén 4 y exhala 6. Repite conmigo."
+            )
+        }
+
+        return Self.fallbackResponse(for: context)
     }
 
     // MARK: - Real API call
 
     private func realInterpret(context: CalmlyContext) async -> AIResponse {
         do {
-            let result = try await withThrowingTaskGroup(of: AIResponse.self) { group in
-                group.addTask { try await self.callOpenAI(context: context) }
-                group.addTask {
-                    try await Task.sleep(nanoseconds: 5_000_000_000)
-                    throw URLError(.timedOut)
-                }
-
-                guard let first = try await group.next() else {
-                    throw URLError(.timedOut)
-                }
-                group.cancelAll()
-                return first
-            }
-            return result
+            return try await callOpenAI(context: context)
         } catch {
-            return Self.fallbackResponse
+            return Self.fallbackResponse(for: context)
         }
     }
 
@@ -86,8 +108,11 @@ final class AIService: Sendable {
         if let noise = context.ambientNoiseLevel {
             userContent += "Nivel de ruido ambiental: \(Int(noise)) dB\n"
         }
+        if context.image != nil {
+            userContent += "Hay una imagen del entorno adjunta.\n"
+        }
         if userContent.isEmpty {
-            userContent = "El usuario presionó el botón de crisis sin dar contexto adicional."
+            userContent = "El usuario presionó el botón de pausa sin dar contexto adicional."
         }
 
         var messages: [[String: Any]] = [
@@ -95,7 +120,6 @@ final class AIService: Sendable {
             ["role": "user", "content": userContent]
         ]
 
-        // If there's an image, add it as a vision message
         if let image = context.image,
            let jpegData = image.jpegData(compressionQuality: 0.5) {
             let base64 = jpegData.base64EncodedString()
@@ -111,13 +135,14 @@ final class AIService: Sendable {
         let body: [String: Any] = [
             "model": APIConfig.model,
             "messages": messages,
-            "temperature": 0.7,
+            "temperature": 0.5,
             "max_tokens": 300,
             "response_format": ["type": "json_object"]
         ]
 
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
+        request.timeoutInterval = 5
         request.setValue("Bearer \(APIConfig.openAIKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -138,5 +163,47 @@ final class AIService: Sendable {
         }
 
         return try JSONDecoder().decode(AIResponse.self, from: contentData)
+    }
+
+    private static func fallbackResponse(for context: CalmlyContext) -> AIResponse {
+        switch preferredIntervention(for: context) {
+        case .breathing:
+            breathingFallback
+        case .grounding:
+            groundingFallback
+        case .reframe:
+            reframeFallback
+        }
+    }
+
+    private static func preferredIntervention(for context: CalmlyContext) -> InterventionType {
+        if (context.ambientNoiseLevel ?? 0) > 70 {
+            return .breathing
+        }
+
+        let combinedText = "\(context.userText ?? "") \(context.transcript ?? "")".lowercased()
+        if combinedText.isEmpty {
+            return .breathing
+        }
+
+        if containsAny(
+            in: combinedText,
+            words: ["gente", "personas", "amigos", "familia", "salón", "salon", "reunión", "reunion", "clase", "oficina", "presentación", "presentacion", "hablar"]
+        ) {
+            return .grounding
+        }
+
+        if containsAny(
+            in: combinedText,
+            words: ["pienso", "pensando", "preocupa", "preocupada", "preocupado", "miedo", "futuro", "mañana", "manana", "y si", "no dejo de pensar", "darle vueltas"]
+        ) {
+            return .reframe
+        }
+
+        return .breathing
+    }
+
+    private static func containsAny(in text: String, words: [String]) -> Bool {
+        words.contains(where: text.contains)
     }
 }

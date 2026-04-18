@@ -26,6 +26,12 @@ final class SessionFlowViewModel {
         isCrisisFlowActive = true
     }
 
+    func startAmbientCrisisFlow(noiseLevel: Double) {
+        startCrisisFlow()
+        context.ambientNoiseLevel = noiseLevel
+        crisisPath.append(.interpreting)
+    }
+
     func submitCapture(text: String?) {
         context.userText = text?.isEmpty == true ? nil : text
         crisisPath.append(.interpreting)
@@ -45,7 +51,7 @@ final class SessionFlowViewModel {
             latestResponse = try await aiService.interpret(context: context, demoMode: demoModeEnabled)
             crisisPath.append(.response)
         } catch {
-            lastErrorMessage = "No pude interpretar este momento. Intentemos de nuevo."
+            lastErrorMessage = "No pude conectar. Intentemos con algo que siempre funciona."
         }
 
         isInterpreting = false

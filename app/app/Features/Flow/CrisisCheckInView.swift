@@ -5,6 +5,7 @@ struct CrisisCheckInView: View {
     @Environment(SessionFlowViewModel.self) private var flow
     @State private var selected: Int? = nil
     @State private var showConfirmation = false
+    @State private var hapticsService = HapticsService()
 
     private let emojis = ["😔", "😐", "😊"]
     private let labels = ["Igual", "Un poco mejor", "Mejor"]
@@ -21,11 +22,11 @@ struct CrisisCheckInView: View {
                         Text("💜")
                             .font(.system(size: 64))
 
-                        Text("Gracias por cuidarte.")
+                        Text("Gracias por hacer esta pausa.")
                             .font(CalmlyTypography.title)
                             .foregroundStyle(CalmlyColors.textPrimary)
 
-                        Text("Siempre estaré aquí cuando me necesites.")
+                        Text("Aquí sigo contigo.")
                             .font(CalmlyTypography.body)
                             .foregroundStyle(CalmlyColors.textSecondary)
                     }
@@ -66,9 +67,14 @@ struct CrisisCheckInView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .onAppear {
+            hapticsService.prepareEngine()
+        }
     }
 
     private func onSelect() {
+        hapticsService.playConfirmationTap()
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
             withAnimation(.easeOut(duration: 0.5)) {
                 showConfirmation = true

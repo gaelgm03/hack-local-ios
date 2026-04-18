@@ -10,6 +10,7 @@ struct CrisisBreathingView: View {
     @State private var secondsRemaining = 30
     @State private var timerActive = true
     @State private var backgroundGlow: Double = 0.08
+    @State private var hapticsService = HapticsService()
 
     private let inhaleDuration: Double = 4
     private let holdDuration: Double = 4
@@ -41,7 +42,7 @@ struct CrisisBreathingView: View {
                 HStack {
                     Spacer()
                     Button("Saltar") {
-                        flow.finishSession()
+                        finishSession()
                     }
                     .font(CalmlyTypography.body)
                     .foregroundStyle(CalmlyColors.textSecondary)
@@ -152,7 +153,14 @@ struct CrisisBreathingView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
-        .onAppear { startBreathingCycle() }
+        .onAppear {
+            hapticsService.prepareEngine()
+            startBreathingCycle()
+        }
+        .onDisappear {
+            timerActive = false
+            hapticsService.stopAll()
+        }
         .task { await countDown() }
     }
 
@@ -163,8 +171,7 @@ struct CrisisBreathingView: View {
     private func breathCycle() {
         guard timerActive else { return }
 
-        // Inhale
-        phase = .inhale
+        setPhase(.inhale)
         withAnimation(.easeInOut(duration: inhaleDuration)) {
             orbScale = 1.2
             backgroundGlow = 0.14
@@ -175,13 +182,13 @@ struct CrisisBreathingView: View {
 
         DispatchQueue.main.asyncAfter(deadline: .now() + inhaleDuration) {
             guard timerActive else { return }
-            // Hold
-            phase = .hold
+
+            setPhase(.hold)
 
             DispatchQueue.main.asyncAfter(deadline: .now() + holdDuration) {
                 guard timerActive else { return }
-                // Exhale
-                phase = .exhale
+
+                setPhase(.exhale)
                 withAnimation(.easeInOut(duration: exhaleDuration)) {
                     orbScale = 0.6
                     backgroundGlow = 0.08
@@ -197,15 +204,35 @@ struct CrisisBreathingView: View {
         }
     }
 
+    private func setPhase(_ newPhase: BreathPhase) {
+        phase = newPhase
+
+        switch newPhase {
+        case .inhale:
+            hapticsService.playInhale()
+        case .hold:
+            hapticsService.playHold()
+        case .exhale:
+            hapticsService.playExhale()
+        }
+    }
+
     private func countDown() async {
         while secondsRemaining > 0 && timerActive {
             try? await Task.sleep(nanoseconds: 1_000_000_000)
             secondsRemaining -= 1
         }
+
         if secondsRemaining <= 0 {
-            timerActive = false
-            flow.finishSession()
+            finishSession()
         }
+    }
+
+    private func finishSession() {
+        guard timerActive else { return }
+        timerActive = false
+        hapticsService.stopAll()
+        flow.finishSession()
     }
 }
 
