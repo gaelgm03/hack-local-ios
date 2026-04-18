@@ -3,7 +3,6 @@ import SwiftUI
 struct HomeView: View {
     @Environment(SessionFlowViewModel.self) private var flow
     @State private var lightMode = false
-    @State private var homeVM = HomeViewModel()
     @State private var showSettings = false
 
     var body: some View {
@@ -11,191 +10,23 @@ struct HomeView: View {
 
         NavigationStack {
             ZStack {
-                (lightMode ? Color(hex: "E8E8E8") : Color(hex: "262626"))
-                    .ignoresSafeArea()
+                backgroundLayer
 
-                VStack(alignment: .leading) {
-                    HStack {
-                        Button {
-                            showSettings = true
-                        } label: {
-                            Label("Demo", systemImage: "slider.horizontal.3")
-                                .font(CalmlyTypography.body)
-                                .foregroundStyle(lightMode ? Color(hex: "222222") : .white)
-                                .padding(.horizontal, 16)
-                                .padding(.vertical, 10)
-                                .background(
-                                    Capsule(style: .continuous)
-                                        .fill(lightMode ? .white : .white.opacity(0.08))
-                                )
-                        }
-                        .buttonStyle(.plain)
+                VStack(spacing: 0) {
+                    topBar
 
-                        Spacer()
+                    Spacer(minLength: 24)
 
-                        Circle()
-                            .fill(lightMode ? Color(hex: "3A383B") : Color(hex: "D9D9D9"))
-                            .frame(width: 54, height: 54)
-                            .onTapGesture {
-                                withAnimation(.easeInOut(duration: 0.25)) {
-                                    lightMode.toggle()
-                                }
-                            }
-                    }
-                    .padding(.horizontal, 28)
-                    .padding(.top, 18)
-
-                    VStack(alignment: .leading, spacing: 18) {
-                        Text("calmly")
-                            .font(.system(size: 62, weight: .bold, design: .rounded))
-                            .foregroundStyle(lightMode ? Color(hex: "222222") : .white)
-
-                        Text("Una pausa guiada en el momento en que lo necesitas.")
-                            .font(CalmlyTypography.body)
-                            .foregroundStyle((lightMode ? Color(hex: "222222") : .white).opacity(0.72))
-                            .frame(maxWidth: 260, alignment: .leading)
-
-                        if flow.demoModeEnabled {
-                            Text("Modo demo activo")
-                                .font(CalmlyTypography.caption)
-                                .foregroundStyle(lightMode ? Color(hex: "222222") : .white)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 8)
-                                .background(
-                                    Capsule(style: .continuous)
-                                        .fill(Color(hex: "F5C6AA").opacity(lightMode ? 0.55 : 0.28))
-                                )
-                        }
-                    }
-                    .padding(.leading, 36)
-                    .padding(.top, 90)
+                    hero
 
                     Spacer()
 
-                    VStack(spacing: 14) {
-                        Button {
-                            homeVM.dismissAmbientBanner()
-                            flow.startImmediatePauseFlow()
-                        } label: {
-                            ZStack {
-                                Circle()
-                                    .fill(Color(hex: "EAA8EE"))
-                                    .frame(width: 126, height: 126)
-                                Image(systemName: "hare.fill")
-                                    .font(.system(size: 40))
-                                    .foregroundStyle(lightMode ? Color(hex: "222222") : .white)
-                            }
-                        }
-                        .buttonStyle(.plain)
-
-                        Text("Necesito una pausa")
-                            .font(.system(size: 38, weight: .bold, design: .rounded))
-                            .lineLimit(2)
-                            .minimumScaleFactor(0.82)
-                            .multilineTextAlignment(.center)
-                            .foregroundStyle(Color(hex: "F09AF3"))
-                            .padding(.horizontal, 32)
-
-                        Button {
-                            homeVM.dismissAmbientBanner()
-                            flow.startCrisisFlow()
-                        } label: {
-                            Text("Agregar contexto opcional")
-                                .font(CalmlyTypography.body)
-                                .foregroundStyle(lightMode ? Color(hex: "222222") : .white)
-                                .padding(.horizontal, 18)
-                                .padding(.vertical, 12)
-                                .background(
-                                    Capsule(style: .continuous)
-                                        .stroke((lightMode ? Color(hex: "222222") : .white).opacity(0.22), lineWidth: 1)
-                                        .background(
-                                            Capsule(style: .continuous)
-                                                .fill(lightMode ? .white.opacity(0.72) : .white.opacity(0.07))
-                                        )
-                                )
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.bottom, 56)
+                    actionPanel
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 44)
                 }
             }
             .navigationBarHidden(true)
-            .overlay(alignment: .bottom) {
-                if homeVM.showAmbientBanner {
-                    HStack(spacing: 14) {
-                        Image(systemName: "waveform")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundStyle(Color(hex: "B8A9E8"))
-
-                        Text("Parece ruidoso aquí. ¿Pausa de 30s?")
-                            .font(CalmlyTypography.body)
-                            .foregroundStyle(.white)
-                            .multilineTextAlignment(.leading)
-
-                        Spacer()
-
-                        Button {
-                            withAnimation(.easeOut(duration: 0.3)) {
-                                homeVM.dismissAmbientBanner()
-                            }
-                            flow.startAmbientCrisisFlow(noiseLevel: homeVM.ambientNoiseLevel)
-                        } label: {
-                            Text("Sí")
-                                .font(CalmlyTypography.title)
-                                .foregroundStyle(.black.opacity(0.8))
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 8)
-                                .background(
-                                    Capsule(style: .continuous)
-                                        .fill(
-                                            LinearGradient(
-                                                colors: [Color(hex: "B8A9E8"), Color(hex: "F5C6AA")],
-                                                startPoint: .leading,
-                                                endPoint: .trailing
-                                            )
-                                        )
-                                )
-                        }
-                        .buttonStyle(CalmlyPressStyle())
-
-                        Button {
-                            withAnimation(.easeOut(duration: 0.3)) {
-                                homeVM.dismissAmbientBanner()
-                            }
-                        } label: {
-                            Image(systemName: "xmark")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.5))
-                                .frame(width: 30, height: 30)
-                        }
-                    }
-                    .padding(16)
-                    .background(
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .fill(Color(hex: "25253D").opacity(0.95))
-                            .shadow(color: Color(hex: "B8A9E8").opacity(0.25), radius: 20, y: -4)
-                    )
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
-        }
-        .task {
-            await homeVM.startMonitoring()
-        }
-        .onDisappear {
-            homeVM.stopMonitoring()
-        }
-        .onChange(of: flow.isCrisisFlowActive) { _, isActive in
-            if isActive {
-                homeVM.stopMonitoring()
-            } else {
-                Task {
-                    await homeVM.startMonitoring()
-                }
-            }
         }
         .fullScreenCover(isPresented: $flow.isCrisisFlowActive, onDismiss: {
             flow.resetDismissedFlow()
@@ -209,6 +40,213 @@ struct HomeView: View {
                 .presentationDragIndicator(.visible)
                 .environment(flow)
         }
+    }
+
+    private var backgroundLayer: some View {
+        ZStack {
+            (lightMode ? Color(hex: "ECE9E4") : Color(hex: "171727"))
+                .ignoresSafeArea()
+
+            RadialGradient(
+                colors: [
+                    Color(hex: "F5C6AA").opacity(lightMode ? 0.22 : 0.12),
+                    Color.clear
+                ],
+                center: .topLeading,
+                startRadius: 20,
+                endRadius: 320
+            )
+            .ignoresSafeArea()
+
+            RadialGradient(
+                colors: [
+                    Color(hex: "B8A9E8").opacity(lightMode ? 0.28 : 0.18),
+                    Color.clear
+                ],
+                center: .bottomTrailing,
+                startRadius: 10,
+                endRadius: 360
+            )
+            .ignoresSafeArea()
+        }
+    }
+
+    private var topBar: some View {
+        HStack {
+            Button {
+                showSettings = true
+            } label: {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(primaryTextColor)
+                    .frame(width: 46, height: 46)
+                    .background(
+                        Circle()
+                            .fill(lightMode ? .white.opacity(0.82) : .white.opacity(0.08))
+                    )
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            Circle()
+                .fill(lightMode ? Color(hex: "3A383B") : Color(hex: "D9D9D9"))
+                .frame(width: 54, height: 54)
+                .overlay {
+                    Image(systemName: lightMode ? "moon.stars.fill" : "sun.max.fill")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(lightMode ? .white : Color(hex: "262626"))
+                }
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: 0.25)) {
+                        lightMode.toggle()
+                    }
+                }
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 18)
+    }
+
+    private var hero: some View {
+        VStack(spacing: 18) {
+            Text("calmly")
+                .font(.system(size: 30, weight: .bold, design: .rounded))
+                .foregroundStyle(primaryTextColor.opacity(0.9))
+                .tracking(0.8)
+
+            Text("30 segundos")
+                .font(CalmlyTypography.caption)
+                .foregroundStyle(primaryTextColor.opacity(0.72))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    Capsule(style: .continuous)
+                        .fill(lightMode ? .white.opacity(0.72) : .white.opacity(0.08))
+                )
+
+            Text("Una pausa clara en el peor minuto.")
+                .font(.system(size: 36, weight: .bold, design: .rounded))
+                .foregroundStyle(primaryTextColor)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 28)
+
+            Text("Entra, respira y vuelve a tomar control sin convertir la ayuda en otra tarea.")
+                .font(CalmlyTypography.body)
+                .foregroundStyle(primaryTextColor.opacity(0.72))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
+
+            if flow.demoModeEnabled {
+                Text("Modo demo activo")
+                    .font(CalmlyTypography.caption)
+                    .foregroundStyle(primaryTextColor)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(
+                        Capsule(style: .continuous)
+                            .fill(Color(hex: "F5C6AA").opacity(lightMode ? 0.5 : 0.24))
+                    )
+            }
+        }
+        .padding(.top, 34)
+    }
+
+    private var actionPanel: some View {
+        VStack(spacing: 16) {
+            Button {
+                flow.startImmediatePauseFlow()
+            } label: {
+                HStack(spacing: 16) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white.opacity(lightMode ? 0.86 : 0.12))
+                            .frame(width: 68, height: 68)
+
+                        Image(systemName: "wind")
+                            .font(.system(size: 28, weight: .semibold))
+                            .foregroundStyle(primaryTextColor)
+                    }
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Necesito una pausa")
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.black.opacity(0.82))
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.84)
+
+                        Text("Empieza ahora")
+                            .font(CalmlyTypography.body)
+                            .foregroundStyle(Color.black.opacity(0.62))
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(Color.black.opacity(0.62))
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 20)
+                .background(
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color(hex: "EAA8EE"), Color(hex: "F5C6AA")],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                )
+                .shadow(color: Color(hex: "B8A9E8").opacity(lightMode ? 0.14 : 0.24), radius: 24, y: 10)
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                flow.startCrisisFlow()
+            } label: {
+                HStack(alignment: .center, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Agregar contexto opcional")
+                            .font(CalmlyTypography.body)
+                            .foregroundStyle(primaryTextColor)
+
+                        Text("Texto, voz o imagen si ayuda a personalizar")
+                            .font(CalmlyTypography.caption)
+                            .foregroundStyle(primaryTextColor.opacity(0.62))
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(primaryTextColor.opacity(0.8))
+                }
+                .padding(.horizontal, 18)
+                .padding(.vertical, 16)
+                .background(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(lightMode ? .white.opacity(0.74) : .white.opacity(0.06))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                .stroke(primaryTextColor.opacity(0.12), lineWidth: 1)
+                        )
+                )
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .fill(lightMode ? .white.opacity(0.18) : .white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 30, style: .continuous)
+                        .stroke(primaryTextColor.opacity(0.08), lineWidth: 1)
+                )
+        )
+    }
+
+    private var primaryTextColor: Color {
+        lightMode ? Color(hex: "222222") : .white
     }
 }
 

@@ -3,31 +3,27 @@ import SwiftUI
 struct SettingsSheet: View {
     @Environment(SessionFlowViewModel.self) private var flow
     @Environment(\.dismiss) private var dismiss
-    @State private var ambientDetectionEnabled = true
 
     var body: some View {
         NavigationStack {
             List {
-                Section("Demo") {
+                Section("Experiencia") {
                     Toggle("Modo demo offline", isOn: binding(\.demoModeEnabled))
 
                     Text(flow.demoModeEnabled
-                         ? "Usa respuestas predefinidas para no depender de internet en escenario."
-                         : "Usa el modelo real cuando haya API key y conexión.")
+                         ? "Usa respuestas predefinidas para no depender de internet durante la presentacion."
+                         : "Usa el modelo real cuando haya API key y conexion.")
                         .font(CalmlyTypography.caption)
                         .foregroundStyle(.secondary)
                 }
 
-                Section("Escenario") {
-                    Toggle("Detección ambiental", isOn: $ambientDetectionEnabled)
-                        .disabled(true)
-
-                    Text("La escucha ambiental sigue activa en Home y queda visible aquí para el pitch.")
+                Section("Producto") {
+                    Text("Calmly prioriza una pausa inmediata y deja el contexto como paso opcional.")
                         .font(CalmlyTypography.caption)
                         .foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle("Demo y ajustes")
+            .navigationTitle("Ajustes de Calmly")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Cerrar") {
