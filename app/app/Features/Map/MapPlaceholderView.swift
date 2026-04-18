@@ -93,14 +93,10 @@ struct MapPlaceholderView: View {
     }
 
     private var intro: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Elige a quien te puede acompa\u{00F1}ar ahora")
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Elige con qui\u{00E9}n hablar ahora")
                 .font(CalmlyTypography.largeTitle)
                 .foregroundStyle(CalmlyColors.textPrimary)
-
-            Text("Modalidad clara y horarios cercanos.")
-                .font(CalmlyTypography.body)
-                .foregroundStyle(CalmlyColors.textSecondary)
         }
     }
 

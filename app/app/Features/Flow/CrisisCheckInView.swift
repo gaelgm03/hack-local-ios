@@ -43,6 +43,7 @@ struct CrisisCheckInView: View {
                         .foregroundStyle(CalmlyColors.textSecondary)
                         .buttonStyle(.plain)
                     }
+                    .padding(.horizontal, 18)
                     .transition(.opacity.combined(with: .scale(scale: 0.96)))
                 } else {
                     VStack(spacing: 36) {
@@ -100,9 +101,9 @@ struct CrisisCheckInView: View {
         case 0:
             return "No necesitas cargar esto solo."
         case 1:
-            return "Ya hubo un cambio. Vale la pena sostenerlo."
+            return "Vas un poco mejor."
         case 2:
-            return "Bien. Recuperaste un poco de control."
+            return "Ya estás mejor."
         default:
             return "Gracias por hacer esta pausa."
         }
@@ -115,7 +116,7 @@ struct CrisisCheckInView: View {
         case 1:
             return "Este es un buen momento para pedir apoyo antes de volver a saturarte."
         case 2:
-            return "Puedes cerrar por ahora o pedir apoyo extra."
+            return "Puedes cerrar por ahora."
         default:
             return "Si quieres, te ayudamos a conectar con apoyo profesional."
         }

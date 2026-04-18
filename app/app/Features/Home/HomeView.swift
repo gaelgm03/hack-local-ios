@@ -72,7 +72,7 @@ struct HomeView: View {
 
                     Spacer()
 
-                    VStack(spacing: 16) {
+                    VStack(spacing: 14) {
                         Button {
                             homeVM.dismissAmbientBanner()
                             flow.startImmediatePauseFlow()
@@ -89,16 +89,12 @@ struct HomeView: View {
                         .buttonStyle(.plain)
 
                         Text("Necesito una pausa")
-                            .font(.system(size: 42, weight: .bold, design: .rounded))
+                            .font(.system(size: 38, weight: .bold, design: .rounded))
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.82)
                             .multilineTextAlignment(.center)
                             .foregroundStyle(Color(hex: "F09AF3"))
                             .padding(.horizontal, 32)
-
-                        Text("Empieza ahora. Si quieres, luego la personalizamos.")
-                            .font(CalmlyTypography.body)
-                            .foregroundStyle((lightMode ? Color(hex: "222222") : .white).opacity(0.68))
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 36)
 
                         Button {
                             homeVM.dismissAmbientBanner()
