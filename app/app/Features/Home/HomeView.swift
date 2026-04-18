@@ -108,45 +108,27 @@ struct HomeView: View {
     }
 
     private var hero: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 10) {
             Text("calmly")
-                .font(.system(size: 30, weight: .bold, design: .rounded))
+                .font(.system(size: 34, weight: .bold, design: .rounded))
                 .foregroundStyle(primaryTextColor.opacity(0.9))
                 .tracking(0.8)
 
             Text("Recupera control en 30 segundos.")
-                .font(.system(size: 38, weight: .bold, design: .rounded))
-                .foregroundStyle(primaryTextColor)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 28)
-
-            Text("Abre, respira y sigue.")
                 .font(CalmlyTypography.body)
                 .foregroundStyle(primaryTextColor.opacity(0.72))
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 48)
-
-            if flow.demoModeEnabled {
-                Text("Modo demo activo")
-                    .font(CalmlyTypography.caption)
-                    .foregroundStyle(primaryTextColor)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 8)
-                    .background(
-                        Capsule(style: .continuous)
-                            .fill(Color(hex: "F5C6AA").opacity(lightMode ? 0.5 : 0.24))
-                    )
-            }
+                .padding(.horizontal, 56)
         }
         .padding(.top, 34)
     }
 
     private var actionPanel: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 24) {
             Button {
                 flow.startImmediatePauseFlow()
             } label: {
-                VStack(spacing: 14) {
+                VStack(spacing: 18) {
                     Circle()
                         .fill(
                             LinearGradient(
@@ -155,26 +137,28 @@ struct HomeView: View {
                                 endPoint: .bottomTrailing
                             )
                         )
-                        .frame(width: 156, height: 156)
+                        .frame(width: 220, height: 220)
                         .overlay {
                             Image(lightMode ? "CalmlyMascotDark" : "CalmlyMascotLight")
                                 .resizable()
                                 .aspectRatio(contentMode: .fill)
-                                .frame(width: 122, height: 122)
+                                .frame(width: 176, height: 176)
                                 .clipShape(Circle())
                         }
                         .overlay {
                             Circle()
                                 .stroke(Color.white.opacity(lightMode ? 0.42 : 0.18), lineWidth: 1)
                         }
-                        .shadow(color: Color(hex: "B8A9E8").opacity(lightMode ? 0.12 : 0.22), radius: 28, y: 12)
+                        .shadow(color: Color(hex: "B8A9E8").opacity(lightMode ? 0.12 : 0.22), radius: 30, y: 14)
 
                     Text("Necesito una pausa")
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .font(.system(size: 34, weight: .bold, design: .rounded))
                         .foregroundStyle(primaryTextColor)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 20)
                 }
+                .frame(maxWidth: .infinity)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
 

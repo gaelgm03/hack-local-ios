@@ -11,7 +11,7 @@ struct SettingsSheet: View {
                     Toggle("Modo demo offline", isOn: binding(\.demoModeEnabled))
 
                     Text(flow.demoModeEnabled
-                         ? "Usa respuestas predefinidas para no depender de internet durante la presentacion."
+                         ? "Usa respuestas predefinidas para no depender de internet"
                          : "Usa el modelo real cuando haya API key y conexion.")
                         .font(CalmlyTypography.caption)
                         .foregroundStyle(.secondary)
@@ -23,7 +23,7 @@ struct SettingsSheet: View {
                         .foregroundStyle(.secondary)
                 }
             }
-            .navigationTitle("Ajustes de Calmly")
+            .navigationTitle("Ajustes")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Cerrar") {
