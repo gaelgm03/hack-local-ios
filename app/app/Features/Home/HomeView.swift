@@ -147,11 +147,22 @@ struct HomeView: View {
                 flow.startImmediatePauseFlow()
             } label: {
                 VStack(spacing: 14) {
-                    Image(lightMode ? "CalmlyMascotLight" : "CalmlyMascotDark")
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [Color(hex: "EAA8EE"), Color(hex: "F5C6AA")],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
                         .frame(width: 156, height: 156)
-                        .clipShape(Circle())
+                        .overlay {
+                            Image(lightMode ? "CalmlyMascotDark" : "CalmlyMascotLight")
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 122, height: 122)
+                                .clipShape(Circle())
+                        }
                         .overlay {
                             Circle()
                                 .stroke(Color.white.opacity(lightMode ? 0.42 : 0.18), lineWidth: 1)
