@@ -50,20 +50,26 @@ final class AIService: Sendable {
     // MARK: - Public
 
     func interpret(context: CalmlyContext, demoMode: Bool) async throws -> AIResponse {
+        print("[AIService] interpret called. demoMode=\(demoMode) hasValidKey=\(APIConfig.hasValidKey)")
+
         if demoMode {
+            print("[AIService] Using demo mode response.")
             return try await demoInterpret(context: context)
         }
 
         guard APIConfig.hasValidKey else {
+            print("[AIService] Missing API key. Using fallback response.")
             return Self.fallbackResponse(for: context)
         }
 
+        print("[AIService] Using real OpenAI request.")
         return await realInterpret(context: context)
     }
 
     // MARK: - Demo mode
 
     private func demoInterpret(context: CalmlyContext) async throws -> AIResponse {
+        print("[AIService] demoInterpret context: \(debugSummary(for: context))")
         try await Task.sleep(nanoseconds: 1_300_000_000)
 
         if (context.ambientNoiseLevel ?? 0) > 70 {
@@ -89,13 +95,17 @@ final class AIService: Sendable {
 
     private func realInterpret(context: CalmlyContext) async -> AIResponse {
         do {
+            print("[AIService] realInterpret context: \(debugSummary(for: context))")
             return try await callOpenAI(context: context)
         } catch {
+            print("[AIService] OpenAI call failed: \(error.localizedDescription)")
+            print("[AIService] Falling back to local response.")
             return Self.fallbackResponse(for: context)
         }
     }
 
     private func callOpenAI(context: CalmlyContext) async throws -> AIResponse {
+        print("[AIService] Calling OpenAI /chat/completions")
         let url = URL(string: "\(APIConfig.baseURL)/chat/completions")!
 
         var userContent = ""
@@ -151,18 +161,29 @@ final class AIService: Sendable {
 
         guard let httpResponse = response as? HTTPURLResponse,
               (200...299).contains(httpResponse.statusCode) else {
+            if let httpResponse = response as? HTTPURLResponse {
+                let body = String(data: data, encoding: .utf8) ?? "<non-utf8 body>"
+                print("[AIService] OpenAI HTTP error: \(httpResponse.statusCode)")
+                print("[AIService] Response body: \(body)")
+            }
             throw URLError(.badServerResponse)
         }
+
+        print("[AIService] OpenAI HTTP success: \((response as? HTTPURLResponse)?.statusCode ?? -1)")
+        print("[AIService] Raw response body: \(String(data: data, encoding: .utf8) ?? "<non-utf8 body>")")
 
         let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
         guard let choices = json?["choices"] as? [[String: Any]],
               let message = choices.first?["message"] as? [String: Any],
               let content = message["content"] as? String,
               let contentData = content.data(using: .utf8) else {
+            print("[AIService] Could not parse OpenAI response body.")
             throw URLError(.cannotParseResponse)
         }
 
-        return try JSONDecoder().decode(AIResponse.self, from: contentData)
+        let decoded = try JSONDecoder().decode(AIResponse.self, from: contentData)
+        print("[AIService] Decoded AI response: empathy='\(decoded.empathy)' type='\(decoded.type.rawValue)'")
+        return decoded
     }
 
     private static func fallbackResponse(for context: CalmlyContext) -> AIResponse {
@@ -205,5 +226,13 @@ final class AIService: Sendable {
 
     private static func containsAny(in text: String, words: [String]) -> Bool {
         words.contains(where: text.contains)
+    }
+
+    private func debugSummary(for context: CalmlyContext) -> String {
+        let text = context.userText?.isEmpty == false ? "text=yes" : "text=no"
+        let transcript = context.transcript?.isEmpty == false ? "transcript=yes" : "transcript=no"
+        let image = context.image != nil ? "image=yes" : "image=no"
+        let noise = context.ambientNoiseLevel.map { "noise=\(Int($0))dB" } ?? "noise=none"
+        return [text, transcript, image, noise].joined(separator: " ")
     }
 }

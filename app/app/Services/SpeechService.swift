@@ -19,6 +19,7 @@ final class SpeechService {
     private var recognitionTask: SFSpeechRecognitionTask?
     private var transcript = ""
     private var autoStopTask: Task<Void, Never>?
+    private var isListening = false
 
     func requestPermissionsIfNeeded() async -> Bool {
         let speechAuthorized = await requestSpeechAuthorizationIfNeeded()
@@ -39,8 +40,9 @@ final class SpeechService {
 
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
-        request.requiresOnDeviceRecognition = false
+        request.requiresOnDeviceRecognition = recognizer?.supportsOnDeviceRecognition == true
         recognitionRequest = request
+        isListening = true
         transcript = ""
 
         do {
@@ -58,8 +60,10 @@ final class SpeechService {
 
         inputNode.removeTap(onBus: 0)
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
-            guard buffer.frameLength > 0 else { return }
-            self?.recognitionRequest?.append(buffer)
+            guard let self else { return }
+            guard self.isListening, self.recognitionRequest === request else { return }
+            guard Self.hasNonEmptyAudioData(buffer) else { return }
+            request.append(buffer)
         }
 
         audioEngine.prepare()
@@ -70,15 +74,23 @@ final class SpeechService {
             throw SpeechServiceError.audioEngineFailed
         }
 
-        recognitionTask = recognizer?.recognitionTask(with: request) { [weak self] result, _ in
+        recognitionTask = recognizer?.recognitionTask(with: request) { [weak self] result, error in
             guard let self else { return }
             if let result {
                 self.transcript = result.bestTranscription.formattedString
             }
+            if result?.isFinal == true || error != nil {
+                self.isListening = false
+            }
         }
 
         autoStopTask = Task { [weak self] in
-            try? await Task.sleep(nanoseconds: 5_000_000_000)
+            do {
+                try await Task.sleep(nanoseconds: 5_000_000_000)
+            } catch {
+                return
+            }
+            guard !Task.isCancelled else { return }
             _ = self?.stopListening()
         }
     }
@@ -87,17 +99,20 @@ final class SpeechService {
     func stopListening() -> String? {
         autoStopTask?.cancel()
         autoStopTask = nil
+        isListening = false
 
         if audioEngine.isRunning {
-            audioEngine.stop()
             audioEngine.inputNode.removeTap(onBus: 0)
+            audioEngine.stop()
         }
 
-        recognitionRequest?.endAudio()
-        recognitionTask?.finish()
-        recognitionTask?.cancel()
-        recognitionTask = nil
+        let activeRequest = recognitionRequest
+        let activeTask = recognitionTask
         recognitionRequest = nil
+        recognitionTask = nil
+
+        activeRequest?.endAudio()
+        activeTask?.cancel()
 
         do {
             try audioSession.setActive(false, options: [.notifyOthersOnDeactivation])
@@ -158,6 +173,13 @@ final class SpeechService {
 
     private func requestMicrophonePermission(_ completion: @escaping (Bool) -> Void) {
         AVAudioApplication.requestRecordPermission(completionHandler: completion)
+    }
+
+    private static func hasNonEmptyAudioData(_ buffer: AVAudioPCMBuffer) -> Bool {
+        let audioBuffers = UnsafeMutableAudioBufferListPointer(buffer.mutableAudioBufferList)
+        return audioBuffers.contains { audioBuffer in
+            audioBuffer.mData != nil && audioBuffer.mDataByteSize > 0
+        }
     }
 }
 
