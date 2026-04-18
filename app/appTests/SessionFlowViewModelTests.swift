@@ -258,6 +258,7 @@ final class SessionFlowViewModelTests: XCTestCase {
         sut.confirmedBooking = sut.pendingBooking
 
         sut.completeFlow()
+        sut.resetDismissedFlow()
 
         XCTAssertFalse(sut.isCrisisFlowActive)
         XCTAssertEqual(sut.crisisRoot, .capture)
@@ -287,6 +288,7 @@ final class SessionFlowViewModelTests: XCTestCase {
         XCTAssertEqual(sut.crisisPath, [.interpreting, .grounding, .checkIn])
 
         sut.completeFlow()
+        sut.resetDismissedFlow()
         XCTAssertFalse(sut.isCrisisFlowActive)
         XCTAssertTrue(sut.crisisPath.isEmpty)
     }
@@ -305,6 +307,7 @@ final class SessionFlowViewModelTests: XCTestCase {
         XCTAssertEqual(sut.crisisPath.last, .checkIn)
 
         sut.completeFlow()
+        sut.resetDismissedFlow()
         XCTAssertFalse(sut.isCrisisFlowActive)
     }
 
@@ -314,6 +317,7 @@ final class SessionFlowViewModelTests: XCTestCase {
         await sut.interpretCurrentContext()
 
         sut.completeFlow()
+        sut.resetDismissedFlow()
 
         XCTAssertFalse(sut.isCrisisFlowActive)
         XCTAssertTrue(sut.crisisPath.isEmpty)

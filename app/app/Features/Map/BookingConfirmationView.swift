@@ -36,7 +36,7 @@ struct BookingConfirmationView: View {
 
                         Text(flow.confirmedBooking == nil
                              ? "Ya resolvimos quien y cuando. Solo falta confirmar."
-                             : "Tu siguiente paso ya quedo agendado. Calmly te acompana hasta aqui.")
+                             : "Tu siguiente paso ya quedo agendado. Calmly te acompa\u{00F1}a hasta aqui.")
                             .font(CalmlyTypography.body)
                             .foregroundStyle(CalmlyColors.textSecondary)
                             .multilineTextAlignment(.center)

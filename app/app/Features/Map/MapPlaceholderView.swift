@@ -36,7 +36,7 @@ struct MapPlaceholderView: View {
         ),
         SpecialistCardModel(
             name: "Dr. Javier Mena",
-            specialty: "Acompaniamiento presencial",
+            specialty: "Acompa\u{00F1}amiento presencial",
             mode: .inPerson,
             city: "San Pedro, Monterrey",
             price: "$780 MXN",
@@ -61,19 +61,6 @@ struct MapPlaceholderView: View {
                             specialistCard(for: specialist)
                         }
 
-                        if let summary = selectionSummary {
-                            CalmlyCard {
-                                Text("Seleccion actual")
-                                    .font(CalmlyTypography.caption)
-                                    .foregroundStyle(CalmlyColors.textSecondary)
-
-                                Text(summary)
-                                    .font(CalmlyTypography.body)
-                                    .foregroundStyle(CalmlyColors.textPrimary)
-                                    .padding(.top, 4)
-                            }
-                            .padding(.top, 4)
-                        }
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 12)
@@ -106,16 +93,12 @@ struct MapPlaceholderView: View {
     }
 
     private var intro: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Siguiente paso")
-                .font(CalmlyTypography.caption)
-                .foregroundStyle(CalmlyColors.accent)
-
-            Text("Elige a quien te puede acompaniar ahora")
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Elige a quien te puede acompa\u{00F1}ar ahora")
                 .font(CalmlyTypography.largeTitle)
                 .foregroundStyle(CalmlyColors.textPrimary)
 
-            Text("Opciones visibles, modalidad clara y horarios cercanos para reducir la duda del siguiente paso.")
+            Text("Modalidad clara y horarios cercanos.")
                 .font(CalmlyTypography.body)
                 .foregroundStyle(CalmlyColors.textSecondary)
         }
@@ -303,12 +286,17 @@ struct MapPlaceholderView: View {
             return nil
         }
 
-        return "Elegiste a \(specialist.name) en modalidad \(specialist.mode.title.lowercased()) para \(slot)."
+        return "\(specialist.name) - \(slot)"
     }
 
     private func selectedSlotForSpecialist(_ specialist: SpecialistCardModel) -> String? {
         guard specialist.id == selectedSpecialistID else { return nil }
-        return selectedSlot ?? specialist.slots.first
+
+        if let selectedSlot, specialist.slots.contains(selectedSlot) {
+            return selectedSlot
+        }
+
+        return specialist.slots.first
     }
 
     private func continueToConfirmation() {

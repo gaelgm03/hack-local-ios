@@ -18,7 +18,7 @@ struct CrisisCheckInView: View {
                 Spacer()
 
                 if showNextStep {
-                    VStack(spacing: 22) {
+                    VStack(spacing: 18) {
                         Text(nextStepTitle)
                             .font(CalmlyTypography.title)
                             .foregroundStyle(CalmlyColors.textPrimary)
@@ -29,18 +29,6 @@ struct CrisisCheckInView: View {
                             .foregroundStyle(CalmlyColors.textSecondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 28)
-
-                        CalmlyCard {
-                            Text(recommendationLabel)
-                                .font(CalmlyTypography.caption)
-                                .foregroundStyle(CalmlyColors.textSecondary)
-
-                            Text(recommendationCopy)
-                                .font(CalmlyTypography.body)
-                                .foregroundStyle(CalmlyColors.textPrimary)
-                                .padding(.top, 4)
-                        }
-                        .padding(.horizontal, 24)
 
                         CalmlyPrimaryButton(title: primaryActionTitle) {
                             primaryAction()
@@ -123,24 +111,14 @@ struct CrisisCheckInView: View {
     private var nextStepCopy: String {
         switch selected {
         case 0:
-            return "Si te sientes igual, lo mejor es reducir la incertidumbre y pasar a apoyo profesional."
+            return "Lo mejor ahora es pasar a apoyo profesional."
         case 1:
-            return "Si ya mejoro un poco, este puede ser un buen momento para pedir apoyo antes de volver a saturarte."
+            return "Este es un buen momento para pedir apoyo antes de volver a saturarte."
         case 2:
-            return "Si por ahora te basta con esta pausa, puedes cerrar. Si quieres mas soporte, tambien te llevamos con un especialista."
+            return "Puedes cerrar por ahora o pedir apoyo extra."
         default:
             return "Si quieres, te ayudamos a conectar con apoyo profesional."
         }
-    }
-
-    private var recommendationLabel: String {
-        shouldPrioritizeSpecialist ? "Recomendacion ahora" : "Siguiente paso opcional"
-    }
-
-    private var recommendationCopy: String {
-        shouldPrioritizeSpecialist
-            ? "Hablar con un especialista es la accion principal en este momento."
-            : "Cerrar por ahora esta bien. Hablar con un especialista queda disponible como opcion."
     }
 
     private var primaryActionTitle: String {

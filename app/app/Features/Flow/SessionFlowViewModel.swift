@@ -129,6 +129,9 @@ final class SessionFlowViewModel {
 
     func completeFlow() {
         isCrisisFlowActive = false
+    }
+
+    func resetDismissedFlow() {
         crisisRoot = .capture
         crisisPath = []
         context = CalmlyContext()

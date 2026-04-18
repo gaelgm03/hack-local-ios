@@ -201,7 +201,9 @@ struct HomeView: View {
                 }
             }
         }
-        .fullScreenCover(isPresented: $flow.isCrisisFlowActive) {
+        .fullScreenCover(isPresented: $flow.isCrisisFlowActive, onDismiss: {
+            flow.resetDismissedFlow()
+        }) {
             CrisisFlowView()
                 .environment(flow)
         }
